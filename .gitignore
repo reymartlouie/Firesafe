@@ -1,0 +1,66 @@
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# =============================
+# Node & Dependencies
+# =============================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+yarn.lock
+
+# =============================
+# Expo / React Native
+# =============================
+.expo/
+.expo-shared/
+dist/
+web-build/
+android/
+ios/
+.expo-dev/
+.expo/packager-info.json
+.expo/settings.json
+.expo/web-cache/
+
+# Metro & Babel Cache
+*.packager
+*.tmp
+*.cache
+
+# =============================
+# Environment Variables
+# =============================
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+expo-env.d.ts
+
+# =============================
+# Supabase
+# =============================
+.supabase/
+supabase/config.toml
+
+# =============================
+# OS / Editor Files
+# =============================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# =============================
+# TypeScript / Logs / Misc
+# =============================
+*.tsbuildinfo
+*.log
+coverage/
+build/
+temp/
