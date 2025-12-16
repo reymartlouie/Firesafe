@@ -15,6 +15,7 @@ import { Link, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as Network from 'expo-network';
 import authService from '../services/authService';
+import pushNotificationService from '../services/pushNotificationService';
 
 export default function LoginScreen() {
   const [username, setUsername] = useState('');
@@ -39,7 +40,7 @@ export default function LoginScreen() {
     setIsLoading(true);
 
     try {
-      // check if may interet connection
+      // Check if there's internet connection
       const networkState = await Network.getNetworkStateAsync();
       if (!networkState.isConnected) {
         showModal('Connection Error', 'You are offline. Please check your internet connection.');
@@ -47,7 +48,20 @@ export default function LoginScreen() {
         return;
       }
 
+      // Login user
       const user = await authService.login(username, password);
+      
+      // Register for push notifications after successful login
+      const expoPushToken = await pushNotificationService.registerForPushNotifications();
+      
+      if (expoPushToken) {
+        // Save the push token to database
+        await pushNotificationService.savePushToken(expoPushToken);
+        console.log('Push notifications registered:', expoPushToken);
+      } else {
+        console.log('Push notifications not available or permission denied');
+      }
+
       showModal('Success', `Welcome back, ${username}!`);
       setTimeout(() => router.replace('/(tabs)/dashboard'), 1500);
     } catch (error: any) {
@@ -61,7 +75,7 @@ export default function LoginScreen() {
     <>
       <StatusBar style="dark" />
 
-      {}
+      {/* Modal */}
       <Modal
         transparent
         animationType="fade"
@@ -127,7 +141,6 @@ export default function LoginScreen() {
               editable={!isLoading}
             />
 
-            {}
             <TouchableOpacity
               style={styles.forgotContainer}
               onPress={() => showModal('Coming Soon', 'Password reset feature coming soon.')}
@@ -210,8 +223,6 @@ const styles = StyleSheet.create({
   },
   signUpText: { fontSize: 14, color: '#757575' },
   signUpLink: { fontSize: 14, color: '#2E7D32', fontWeight: '600' },
-
-  // Modal styles
   modalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',

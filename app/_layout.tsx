@@ -27,7 +27,7 @@ export default function RootLayout() {
       }}
     >
       {/* Auth screens - shown first */}
-      <Stack.Screen name="index" />
+      <Stack.Screen name="signin" />
       <Stack.Screen name="signup" />
       
       {/* Main app with tabs - shown after login */}

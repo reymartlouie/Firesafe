@@ -199,11 +199,11 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   statusCard: {
-    backgroundColor: '#FFF6F4',
+    backgroundColor: '#FFEDD5',
     borderRadius: 24,
     padding: 28,
     borderWidth: 1,
-    borderColor: '#FCA5A5',
+    borderColor: '#FDBA74',
   },
   statusHeader: {
     flexDirection: 'row',
@@ -242,9 +242,9 @@ const styles = StyleSheet.create({
   },
   iconRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
+    gap: 32,
     marginTop: 20,
-    paddingHorizontal: 10,
   },
   iconItem: {
     alignItems: 'center',
