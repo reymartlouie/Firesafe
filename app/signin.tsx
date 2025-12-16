@@ -9,15 +9,15 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
-  Modal,
 } from 'react-native';
 import { Link, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as Network from 'expo-network';
 import authService from '../services/authService';
 import pushNotificationService from '../services/pushNotificationService';
+import CustomModalAlert from './CustomModalAlert';
 
-export default function LoginScreen() {
+export default function SignInScreen() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -63,7 +63,10 @@ export default function LoginScreen() {
       }
 
       showModal('Success', `Welcome back, ${username}!`);
-      setTimeout(() => router.replace('/(tabs)/dashboard'), 1500);
+      setTimeout(() => {
+        setModalVisible(false);
+        router.replace('/(tabs)/dashboard');
+      }, 1500);
     } catch (error: any) {
       showModal('Login Failed', error.message || 'Invalid login credentials.');
     } finally {
@@ -75,26 +78,13 @@ export default function LoginScreen() {
     <>
       <StatusBar style="dark" />
 
-      {/* Modal */}
-      <Modal
-        transparent
-        animationType="fade"
+      {/* Custom Modal Alert */}
+      <CustomModalAlert
         visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>{modalTitle}</Text>
-            <Text style={styles.modalMessage}>{modalMessage}</Text>
-            <TouchableOpacity
-              style={styles.modalButton}
-              onPress={() => setModalVisible(false)}
-            >
-              <Text style={styles.modalButtonText}>OK</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+        title={modalTitle}
+        message={modalMessage}
+        onClose={() => setModalVisible(false)}
+      />
 
       <KeyboardAvoidingView
         style={styles.container}
@@ -223,26 +213,4 @@ const styles = StyleSheet.create({
   },
   signUpText: { fontSize: 14, color: '#757575' },
   signUpLink: { fontSize: 14, color: '#2E7D32', fontWeight: '600' },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContainer: {
-    width: '80%',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 24,
-    elevation: 5,
-  },
-  modalTitle: { fontSize: 20, fontWeight: '700', color: '#2C2C2C', marginBottom: 8 },
-  modalMessage: { fontSize: 16, color: '#555', marginBottom: 16 },
-  modalButton: {
-    backgroundColor: '#2E7D32',
-    borderRadius: 12,
-    alignItems: 'center',
-    paddingVertical: 10,
-  },
-  modalButtonText: { color: '#FFF', fontSize: 16, fontWeight: '600' },
 });

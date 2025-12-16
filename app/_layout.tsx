@@ -26,15 +26,16 @@ export default function RootLayout() {
         contentStyle: { backgroundColor: '#F5F5F5' },
       }}
     >
-      {/* Auth screens - shown first */}
+      {/* Auth screens */}
+      <Stack.Screen name="index" />
       <Stack.Screen name="signin" />
       <Stack.Screen name="signup" />
       
-      {/* Main app with tabs - shown after login */}
+      {/* Main app with tabs */}
       <Stack.Screen 
         name="(tabs)" 
         options={{ headerShown: false }} 
       />
     </Stack>
   );
-};
+}

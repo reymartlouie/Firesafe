@@ -13,11 +13,11 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import CustomModalAlert from '../app/CustomModalAlert'; //import sang modal alert
+import CustomModalAlert from './CustomModalAlert';
 import authService from '../services/authService';
-import { supabase } from '../lib/supabaseClient'; //import sang client
+import { supabase } from '../lib/supabaseClient';
 
-export default function SignupScreen() {
+export default function SignUpScreen() {
   const [username, setUsername] = useState('');
   const [contactNumber, setContactNumber] = useState('');
   const [password, setPassword] = useState('');
@@ -27,8 +27,8 @@ export default function SignupScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [modalMessage, setModalMessage] = useState('');
 
-  //gina show sang modal
   const handleSignup = async () => {
+    // Validation
     if (!username || !contactNumber || !password || !confirmPassword) {
       setModalMessage('Please fill in all fields.');
       setModalVisible(true);
@@ -50,7 +50,7 @@ export default function SignupScreen() {
     setIsLoading(true);
 
     try {
-      // gina check kung user already exists
+      // Check if username already exists
       const { data: existingUser, error: checkError } = await supabase
         .from('profiles')
         .select('username')
@@ -60,47 +60,47 @@ export default function SignupScreen() {
       if (checkError) throw checkError;
 
       if (existingUser) {
-        setModalMessage('Account is already registered.');
+        setModalMessage('Username is already taken.');
         setModalVisible(true);
         setIsLoading(false);
         return;
       }
 
-      // Signup kung wala pa na register
+      // Signup if user doesn't exist
       const user = await authService.signup(username, contactNumber, password);
 
-      setModalMessage('Account successfully registered!.');
+      setModalMessage('Account successfully registered!');
       setModalVisible(true);
 
-      // redirect to signin after signup para better ux (ANGAS)
+      // Redirect to signin after signup for better UX
       setTimeout(() => {
         setModalVisible(false);
-        router.replace('/');
+        router.replace('/signin');
       }, 2000);
       
     } catch (error: any) {
-  let errorMessage = error.message || 'Signup failed. Please try again.';
+      let errorMessage = error.message || 'Signup failed. Please try again.';
 
-  // Check for duplicate contact number error from Supabase
-  if (
-    errorMessage.includes('duplicate key value') &&
-    errorMessage.includes('profiles_contact_number_key')
-  ) {
-    errorMessage = 'Contact Number Already Registered.';
-  }
+      // Check for duplicate contact number error from Supabase
+      if (
+        errorMessage.includes('duplicate key value') &&
+        errorMessage.includes('profiles_contact_number_key')
+      ) {
+        errorMessage = 'Contact number is already registered.';
+      }
 
-  setModalMessage(errorMessage);
-  setModalVisible(true);
-} finally {
-  setIsLoading(false);
-}
+      setModalMessage(errorMessage);
+      setModalVisible(true);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <>
       <StatusBar style="dark" />
 
-      {}
+      {/* Custom Modal Alert */}
       <CustomModalAlert
         visible={modalVisible}
         title="Notice"
@@ -116,7 +116,7 @@ export default function SignupScreen() {
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
-          {}
+          {/* Header */}
           <View style={styles.header}>
             <View style={styles.headerContainer}>
               <Text style={styles.title}>Sign Up and Stay Protected</Text>
@@ -130,7 +130,7 @@ export default function SignupScreen() {
             </TouchableOpacity>
           </View>
 
-          {}
+          {/* Form */}
           <View style={styles.formContainer}>
             <Text style={styles.label}>Username</Text>
             <TextInput
