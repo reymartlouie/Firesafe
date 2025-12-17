@@ -41,7 +41,7 @@ const pushNotificationService = {
 
       // Get the Expo push token
       const tokenData = await Notifications.getExpoPushTokenAsync({
-        projectId: 'eeed762d-729e-41da-a627-986c168e8487', // Replace with your actual Expo project ID
+        projectId: 'eeed762d-729e-41da-a627-986c168e8487',
       });
 
       const expoPushToken = tokenData.data;
@@ -74,27 +74,20 @@ const pushNotificationService = {
         throw new Error('User not authenticated');
       }
 
-      // Insert or update push token in database
-      const { error: insertError } = await supabase
-        .from('push_tokens')
-        .upsert(
-          {
-            user_id: user.id,
-            expo_push_token: expoPushToken,
-          },
-          {
-            onConflict: 'expo_push_token',
-          }
-        );
+      // Call the database function
+      const { error: saveError } = await supabase.rpc('save_push_token', {
+        p_user_id: user.id,
+        p_expo_push_token: expoPushToken,
+      });
 
-      if (insertError) {
-        throw insertError;
+      if (saveError) {
+        throw saveError;
       }
 
-      console.log('Push token saved successfully');
+      console.log('✅ Push token saved successfully');
       return true;
     } catch (error) {
-      console.error('Error saving push token:', error);
+      console.error('❌ Error saving push token:', error);
       return false;
     }
   },
