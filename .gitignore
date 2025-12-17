@@ -63,4 +63,5 @@ Thumbs.db
 *.log
 coverage/
 build/
-temp/
+temp/google-services.json
+app/google-services.json
