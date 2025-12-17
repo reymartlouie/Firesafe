@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "506259295804",
+    "project_id": "firesafeapp-d58bc",
+    "storage_bucket": "firesafeapp-d58bc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:506259295804:android:a4027b94d9d3cefeaf3d39",
+        "android_client_info": {
+          "package_name": "com.reymart305.FireSafeApp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDya2nfx6v31hsyCYqEgx1klPz__g3UXFc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
