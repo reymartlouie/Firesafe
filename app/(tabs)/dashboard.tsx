@@ -282,15 +282,15 @@ export default function DashboardScreen() {
                   <View style={styles.iconRow}>
                     <View style={styles.iconItem}>
                       <FontAwesome6 name="temperature-three-quarters" size={16} color="#1F2937" />
-                      <Text style={styles.iconText}>{latestEvent.temperature.toFixed(1)}°C</Text>
+                      <Text style={styles.iconText}>{latestEvent.temperature?.toFixed(1) ?? 'N/A'}°C</Text>
                     </View>
                     <View style={styles.iconItem}>
                       <Entypo name="air" size={16} color="#1F2937" />
-                      <Text style={styles.iconText}>{latestEvent.humidity.toFixed(1)}%</Text>
+                      <Text style={styles.iconText}>{latestEvent.humidity?.toFixed(1) ?? 'N/A'}%</Text>
                     </View>
                     <View style={styles.iconItem}>
                       <MaterialCommunityIcons name="smoke" size={16} color="#1F2937" />
-                      <Text style={styles.iconText}>{latestEvent.smoke_gas.toFixed(0)}PPM</Text>
+                      <Text style={styles.iconText}>{latestEvent.smoke_gas?.toFixed(0) ?? 'N/A'}PPM</Text>
                     </View>
                   </View>
                 </View>
@@ -494,7 +494,7 @@ const styles = StyleSheet.create({
   },
   statusLevel: {
     fontSize: 64,
-    fontWeight: '500',
+    fontWeight: '700',
     letterSpacing: -2,
     alignSelf: 'center',
     marginVertical: 16,

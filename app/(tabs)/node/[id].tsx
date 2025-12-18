@@ -298,14 +298,14 @@ export default function NodeDetailScreen() {
                       color="#1F2937"
                     />
                     <Text style={styles.iconText}>
-                      {latestEvent.temperature.toFixed(1)}°C
+                      {latestEvent.temperature?.toFixed(1) ?? 'N/A'}°C
                     </Text>
                   </View>
 
                   <View style={styles.iconItem}>
                     <Entypo name="air" size={16} color="#1F2937" />
                     <Text style={styles.iconText}>
-                      {latestEvent.humidity.toFixed(1)}%
+                      {latestEvent.humidity?.toFixed(1) ?? 'N/A'}%
                     </Text>
                   </View>
 
@@ -316,7 +316,7 @@ export default function NodeDetailScreen() {
                       color="#1F2937"
                     />
                     <Text style={styles.iconText}>
-                      {latestEvent.smoke_gas.toFixed(0)}PPM
+                      {latestEvent.smoke_gas?.toFixed(0) ?? 'N/A'}PPM
                     </Text>
                   </View>
                 </View>
