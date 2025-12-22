@@ -26,8 +26,5 @@
   },
   "submit": {
     "production": {}
-  },
-  "hooks": {
-    "prebuild": "scripts/eas-build-pre-install.sh"
   }
 }

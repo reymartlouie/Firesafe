@@ -65,3 +65,5 @@ coverage/
 build/
 temp/google-services.json
 app/google-services.json
+google-services-base64.txt
+eas-build-pre-install.sh
