@@ -1,38 +1,22 @@
-# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+# =============================
+# CRITICAL SECRETS - NEVER COMMIT!
+# =============================
 
-# =============================
-# Node & Dependencies
-# =============================
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-package-lock.json
-yarn.lock
+# Google Services / Firebase (contains API keys!)
+google-services.json
+android/app/google-services.json
+app/google-services.json
+ios/GoogleService-Info.plist
+**/google-services.json
+temp/google-services.json
 
-# =============================
-# Expo / React Native
-# =============================
-.expo/
-.expo-shared/
-dist/
-web-build/
-android/
-ios/
-.expo-dev/
-.expo/packager-info.json
-.expo/settings.json
-.expo/web-cache/
+# Base64 Encoded Secrets
+google-services-base64.txt
+google-services-base64-NEW.txt
+google-services-base64-FIXED.txt
+*base64*.txt
 
-# Metro & Babel Cache
-*.packager
-*.tmp
-*.cache
-
-# =============================
-# Environment Variables
-# =============================
+# Environment Variables (Supabase, etc.)
 .env
 .env.local
 .env.development
@@ -40,29 +24,132 @@ ios/
 .env.test
 expo-env.d.ts
 
+# Android Signing Keys & Certificates
+*.jks
+*.keystore
+keystore.properties
+key.properties
+release.keystore
+debug.keystore
+
+# iOS Signing
+*.p12
+*.mobileprovision
+*.cer
+
 # =============================
-# Supabase
+# BUILD OUTPUTS & GENERATED FILES
 # =============================
+
+# Android Build Outputs (keep source, ignore builds)
+android/app/build/
+android/build/
+android/.gradle/
+android/app/release/
+android/app/debug/
+android/.cxx/
+android/app/.cxx/
+android/local.properties
+
+# iOS Build Outputs
+ios/build/
+ios/Pods/
+ios/*.xcworkspace
+ios/.xcode.env.local
+
+# Expo & Metro
+.expo/
+.expo-shared/
+.expo-dev/
+.expo/packager-info.json
+.expo/settings.json
+.expo/web-cache/
+dist/
+web-build/
+
+# Metro & Babel Cache
+.metro
+*.cache
+.cache/
+
+# =============================
+# NODE & PACKAGE MANAGERS
+# =============================
+
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+yarn.lock
+.pnpm-debug.log
+
+# =============================
+# SUPABASE
+# =============================
+
 .supabase/
 supabase/config.toml
 
 # =============================
-# OS / Editor Files
+# OS & EDITOR FILES
 # =============================
+
+# macOS
 .DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
 Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
+
+# Editors
 .vscode/
 .idea/
 *.swp
 *.swo
+*.swn
+.project
+.settings/
+.classpath
 
 # =============================
-# TypeScript / Logs / Misc
+# TYPESCRIPT & LOGS
 # =============================
+
 *.tsbuildinfo
 *.log
 coverage/
 build/
-temp/google-services.json
-app/google-services.json
-google-services-base64.txt
+temp/
+
+# =============================
+# REACT NATIVE / EXPO SPECIFIC
+# =============================
+
+*.packager
+*.tmp
+*.jsbundle
+
+# =============================
+# BACKUP & TEMPORARY FILES
+# =============================
+
+*.backup
+*.bak
+*.old
+*~
+
+# =============================
+# TESTING
+# =============================
+
+.jest/
+__tests__/__snapshots__/
