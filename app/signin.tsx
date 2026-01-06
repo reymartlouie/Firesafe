@@ -49,7 +49,7 @@ export default function SignInScreen() {
       }
 
       // Login user
-      const user = await authService.login(username, password);
+      await authService.login(username, password);
       
       // Register for push notifications after successful login
       const expoPushToken = await pushNotificationService.registerForPushNotifications();

@@ -67,7 +67,7 @@ export default function SignUpScreen() {
       }
 
       // Signup if user doesn't exist
-      const user = await authService.signup(username, contactNumber, password);
+      await authService.signup(username, contactNumber, password);
 
       setModalMessage('Account successfully registered!');
       setModalVisible(true);

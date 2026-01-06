@@ -3,9 +3,9 @@ import { supabase } from '../lib/supabaseClient';
 const authService = {
   // Sign up a new user
   signup: async (username: string, contactNumber: string, password: string) => {
-    // Step 1: Create auth user
+    // Create auth user
     const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: `${username}@firesafe.com`, // Supabase needs an email, we fake one if you only use username
+      email: `${username}@firesafe.com`, // Supabase needs an email
       password,
     });
 
@@ -13,7 +13,7 @@ const authService = {
 
     const userId = authData.user?.id;
 
-    // Step 2: Insert into profiles table
+    // Insert into profiles table
     const { error: profileError } = await supabase
       .from('profiles')
       .insert([{ id: userId, username, contact_number: contactNumber }]);
