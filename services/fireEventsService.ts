@@ -129,33 +129,6 @@ class FireEventsService {
   }
 
   /**
-   * Get events by risk level
-   * 
-   * Non-Technical: Gets all events that match a specific risk level
-   * (e.g., all "High" risk events)
-   * 
-   * Technical: Filters fire_events by risk column (case-insensitive match)
-   * 
-   * @param riskLevel - Risk level string (e.g., 'High', 'Critical', 'Normal')
-   * @returns Array of FireEvent objects matching the risk level
-   */
-  async getEventsByRisk(riskLevel: string): Promise<FireEvent[]> {
-    try {
-      const { data, error } = await supabase
-        .from('fire_events')
-        .select('*')
-        .eq('risk', riskLevel)
-        .order('event_timestamp', { ascending: false });
-
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      console.error('Error fetching events by risk:', error);
-      return [];
-    }
-  }
-
-  /**
    * Subscribe to real-time fire events
    * 
    * Non-Technical: Listens for new sensor readings in real-time. When a new
@@ -185,29 +158,6 @@ class FireEventsService {
       .subscribe();
 
     return subscription;
-  }
-
-  /**
-   * Get node name mapping
-   * 
-   * Non-Technical: Converts node numbers (1, 2, 3, 4) to readable location names
-   * (e.g., 1 → "Purok Maligaya")
-   * 
-   * Technical: Maps node numbers to location names using a hardcoded object.
-   * Returns formatted string with node number if location not found.
-   * 
-   * @param nodeNumber - Node ID (1-4)
-   * @returns Location name string
-   */
-  getNodeName(nodeNumber: number): string {
-    const nodeNames: { [key: number]: string } = {
-      1: 'Purok Maligaya',
-      2: 'Purok Bugtong Bato',
-      3: 'Purok Bakhaw',
-      4: 'Purok Boracay',
-    };
-
-    return nodeNames[nodeNumber] || `Node ${nodeNumber}`;
   }
 
   /**
