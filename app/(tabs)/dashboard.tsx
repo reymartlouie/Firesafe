@@ -198,7 +198,7 @@ export default function DashboardScreen() {
 
   /**
    * Get color based on risk level
-   * 
+   *
    * Non-Technical: Returns red for Critical, orange for High
    * Technical: Maps risk string to hex color code (case-insensitive)
    * System only uses Critical and High risk levels
@@ -208,6 +208,27 @@ export default function DashboardScreen() {
     if (riskUpper === 'CRITICAL') return '#DC2626'; // red-600
     if (riskUpper === 'HIGH') return '#EA580C';     // orange-600
     return '#6B7280'; // gray-500 fallback (shouldn't occur in production)
+  };
+
+  /**
+   * Get card background colors based on risk level
+   *
+   * Non-Technical: Returns light red background for Critical, light orange for High
+   * Technical: Maps risk string to background and border colors for the status card
+   */
+  const getRiskCardColors = (risk: string) => {
+    const riskUpper = risk?.toUpperCase();
+    if (riskUpper === 'CRITICAL') {
+      return {
+        backgroundColor: '#FEE2E2', // red-100
+        borderColor: '#FCA5A5',     // red-300
+      };
+    }
+    // Default to HIGH (orange)
+    return {
+      backgroundColor: '#FFEDD5', // orange-100
+      borderColor: '#FDBA74',     // orange-300
+    };
   };
 
   if (loading) {
@@ -258,7 +279,7 @@ export default function DashboardScreen() {
           <Text style={styles.sectionTitle}>Latest Status</Text>
           
           {latestEvent ? (
-            <View style={styles.statusCard}>
+            <View style={[styles.statusCard, getRiskCardColors(latestEvent.risk)]}>
               <View style={styles.statusHeader}>
                 <View style={styles.statusHeaderLeft}>
                   <Text style={styles.statusTime}>
