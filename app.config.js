@@ -1,13 +1,19 @@
+const appJson = require('./app.json');
 const fs = require('fs');
 const path = require('path');
-const appJson = require('./app.json');
 
-if (process.env.GOOGLE_SERVICES_JSON_BASE64 && process.env.EAS_BUILD === 'true') {
-  const filePath = path.join(__dirname, 'android/app/google-services.json');
-  fs.mkdirSync(path.dirname(filePath), { recursive: true });
-  const content = Buffer.from(process.env.GOOGLE_SERVICES_JSON_BASE64, 'base64').toString('utf-8');
-  fs.writeFileSync(filePath, content, 'utf-8');
-  console.log('✅ google-services.json created');
-}
+module.exports = ({ config }) => {
+  const appConfig = { ...appJson.expo };
 
-module.exports = ({ config }) => ({ ...appJson.expo });
+  // Add googleServicesFile if it exists (created by eas-build-pre-install.sh)
+  const googleServicesPath = path.join(__dirname, 'google-services.json');
+  if (fs.existsSync(googleServicesPath)) {
+    appConfig.android = {
+      ...appConfig.android,
+      googleServicesFile: './google-services.json',
+    };
+    console.log('✅ googleServicesFile added to config');
+  }
+
+  return appConfig;
+};
