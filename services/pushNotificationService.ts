@@ -4,12 +4,13 @@ import { Platform } from 'react-native';
 import { supabase } from '../lib/supabaseClient';
 
 // Configure how notifications are displayed when app is in foreground
-// @ts-ignore - expo-notifications type issue
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
@@ -123,17 +124,16 @@ const pushNotificationService = {
     const responseListener = Notifications.addNotificationResponseReceivedListener(
       (response) => {
         console.log('Notification tapped:', response);
-        const data = response.notification.request.content.data;
-        
         // You can navigate to specific screen based on notification data
+        // const data = response.notification.request.content.data;
         // For example: router.push(`/fire-event/${data.event_id}`);
       }
     );
 
     // Return cleanup function
     return () => {
-      Notifications.removeNotificationSubscription(notificationListener);
-      Notifications.removeNotificationSubscription(responseListener);
+      notificationListener.remove();
+      responseListener.remove();
     };
   },
 };
