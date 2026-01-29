@@ -66,7 +66,7 @@ class FireEventsService {
         .single();
 
       if (error) throw error;
-      return data;
+      return data as unknown as FireEvent;
     } catch (error) {
       console.error('Error fetching latest event:', error);
       return null;
@@ -113,7 +113,7 @@ class FireEventsService {
       const totalPages = Math.ceil(totalCount / limit);
 
       return {
-        events: data || [],
+        events: (data as unknown as FireEvent[]) || [],
         totalCount,
         totalPages,
       };
@@ -147,7 +147,7 @@ class FireEventsService {
         .order('event_timestamp', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      return (data as unknown as FireEvent[]) || [];
     } catch (error) {
       console.error('Error fetching events by node:', error);
       return [];
@@ -175,7 +175,7 @@ class FireEventsService {
         .order('event_timestamp', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      return (data as unknown as FireEvent[]) || [];
     } catch (error) {
       console.error('Error fetching events by risk:', error);
       return [];
