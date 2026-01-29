@@ -8,19 +8,25 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-          "GOOGLE_SERVICES_JSON_BASE64": "@GOOGLE_SERVICES_JSON_BASE64"
+          "GOOGLE_SERVICES_JSON_BASE64": "@GOOGLE_SERVICES_JSON_BASE64",
+          "EXPO_PUBLIC_SUPABASE_URL": "https://cfoxncdbzeiilexpylhx.supabase.co",
+          "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNmb3huY2RiemVpaWxleHB5bGh4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkyOTgzMTYsImV4cCI6MjA3NDg3NDMxNn0.Iypm_fJCVji7AxHq-XNS_NyBlQz04dDbu3xBkXwBRAM"
       }
     },
     "preview": {
       "distribution": "internal",
       "env": {
-          "GOOGLE_SERVICES_JSON_BASE64": "@GOOGLE_SERVICES_JSON_BASE64"
+          "GOOGLE_SERVICES_JSON_BASE64": "@GOOGLE_SERVICES_JSON_BASE64",
+          "EXPO_PUBLIC_SUPABASE_URL": "https://cfoxncdbzeiilexpylhx.supabase.co",
+          "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNmb3huY2RiemVpaWxleHB5bGh4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkyOTgzMTYsImV4cCI6MjA3NDg3NDMxNn0.Iypm_fJCVji7AxHq-XNS_NyBlQz04dDbu3xBkXwBRAM"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-          "GOOGLE_SERVICES_JSON_BASE64": "@GOOGLE_SERVICES_JSON_BASE64"
+          "GOOGLE_SERVICES_JSON_BASE64": "@GOOGLE_SERVICES_JSON_BASE64",
+          "EXPO_PUBLIC_SUPABASE_URL": "https://cfoxncdbzeiilexpylhx.supabase.co",
+          "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNmb3huY2RiemVpaWxleHB5bGh4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkyOTgzMTYsImV4cCI6MjA3NDg3NDMxNn0.Iypm_fJCVji7AxHq-XNS_NyBlQz04dDbu3xBkXwBRAM"
       }
     }
   },
