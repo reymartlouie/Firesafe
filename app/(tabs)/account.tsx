@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import authService from '../../services/authService';
+import pushNotificationService from '../../services/pushNotificationService';
 import CustomModalAlert from '../../app/CustomModalAlert';
 
 export default function AccountScreen() {
@@ -28,6 +29,12 @@ export default function AccountScreen() {
 
   const handleLogout = async () => {
     try {
+      // Remove push token from database before signing out
+      const storedToken = await pushNotificationService.getStoredPushToken();
+      if (storedToken) {
+        await pushNotificationService.removePushToken(storedToken);
+      }
+
       await authService.logout();
       setModalMessage('You have been logged out successfully.');
       setModalVisible(true);
