@@ -275,7 +275,7 @@ export default function NodeDetailScreen() {
                     {formatEventTime(latestEvent.event_timestamp)}
                   </Text>
                   <Text style={styles.statusLocation}>
-                    {latestEvent.sensor_nodes.latitude.toFixed(4)}°N, {' '} {latestEvent.sensor_nodes.longitude.toFixed(4)}°E {' '}({latestEvent.sensor_nodes.location_name})
+                    {latestEvent.sensor_nodes.location_name}
                   </Text>
                 </View>
               </View>
