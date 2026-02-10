@@ -3,6 +3,7 @@ import { Stack } from 'expo-router';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import 'react-native-reanimated';
+import pushNotificationService from '../services/pushNotificationService';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -14,6 +15,12 @@ export default function RootLayout() {
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded]);
+
+  // Set up notification listeners for the entire app lifecycle
+  useEffect(() => {
+    const cleanup = pushNotificationService.setupNotificationListeners();
+    return cleanup;
+  }, []);
 
   if (!fontsLoaded) {
     return null;

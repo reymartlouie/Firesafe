@@ -1,7 +1,10 @@
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
+import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 import { supabase } from '../lib/supabaseClient';
+
+const PUSH_TOKEN_KEY = 'expo_push_token';
 
 // Configure how notifications are displayed when app is in foreground
 Notifications.setNotificationHandler({
@@ -65,12 +68,12 @@ const pushNotificationService = {
     }
   },
 
-  // Save push token to Supabase
+  // Save push token to Supabase and local storage
   savePushToken: async (expoPushToken: string): Promise<boolean> => {
     try {
       // Get current user
       const { data: { user }, error: userError } = await supabase.auth.getUser();
-      
+
       if (userError || !user) {
         throw new Error('User not authenticated');
       }
@@ -85,11 +88,24 @@ const pushNotificationService = {
         throw saveError;
       }
 
-      console.log('✅ Push token saved successfully');
+      // Store token locally for use during logout
+      await SecureStore.setItemAsync(PUSH_TOKEN_KEY, expoPushToken);
+
+      console.log('Push token saved successfully');
       return true;
     } catch (error) {
-      console.error('❌ Error saving push token:', error);
+      console.error('Error saving push token:', error);
       return false;
+    }
+  },
+
+  // Get locally stored push token
+  getStoredPushToken: async (): Promise<string | null> => {
+    try {
+      return await SecureStore.getItemAsync(PUSH_TOKEN_KEY);
+    } catch (error) {
+      console.error('Error reading stored push token:', error);
+      return null;
     }
   },
 
@@ -102,6 +118,9 @@ const pushNotificationService = {
         .eq('expo_push_token', expoPushToken);
 
       if (error) throw error;
+
+      // Clear locally stored token
+      await SecureStore.deleteItemAsync(PUSH_TOKEN_KEY);
 
       console.log('Push token removed successfully');
       return true;
