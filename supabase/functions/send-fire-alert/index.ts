@@ -6,9 +6,11 @@ const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
 interface FireEvent {
   id: string;
   risk: string;
-  latitude: number;
-  longitude: number;
   event_timestamp: string;
+  sensor_nodes: {
+    latitude: number;
+    longitude: number;
+  };
 }
 
 interface PushToken {
@@ -41,10 +43,10 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Fetch the fire event details
+    // Fetch the fire event details with sensor_nodes location data
     const { data: fireEvent, error: eventError } = await supabase
       .from("fire_events")
-      .select("id, risk, latitude, longitude, event_timestamp")
+      .select("id, risk, event_timestamp, sensor_nodes(latitude, longitude)")
       .eq("id", event_id)
       .single();
 
@@ -78,16 +80,17 @@ serve(async (req) => {
     }
 
     // Prepare push notification messages
+    const { latitude, longitude } = fireEvent.sensor_nodes;
     const messages = tokens.map((token: PushToken) => ({
       to: token.expo_push_token,
       sound: "default",
       title: `🔥 ${fireEvent.risk} Fire Risk Alert`,
-      body: `Fire detected at ${fireEvent.latitude.toFixed(4)}, ${fireEvent.longitude.toFixed(4)}`,
+      body: `Fire detected at ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`,
       data: {
         event_id: fireEvent.id,
         risk: fireEvent.risk,
-        latitude: fireEvent.latitude,
-        longitude: fireEvent.longitude,
+        latitude,
+        longitude,
         event_timestamp: fireEvent.event_timestamp,
       },
       priority: "high",
