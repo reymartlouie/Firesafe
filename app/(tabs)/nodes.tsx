@@ -5,6 +5,7 @@ import {
   ActivityIndicator,
   Image,
   Modal,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -20,6 +21,8 @@ export default function NodesScreen() {
   const { isAdmin } = useAdmin();
   const [nodes, setNodes] = useState<Node[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Edit modal state
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -29,6 +32,19 @@ export default function NodesScreen() {
   const [editLongitude, setEditLongitude] = useState('');
   const [saving, setSaving] = useState(false);
 
+  // Delete confirmation state
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [deletingNode, setDeletingNode] = useState<Node | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  // Add node modal state
+  const [addModalVisible, setAddModalVisible] = useState(false);
+  const [addNodeNumber, setAddNodeNumber] = useState('');
+  const [addLocationName, setAddLocationName] = useState('');
+  const [addLatitude, setAddLatitude] = useState('');
+  const [addLongitude, setAddLongitude] = useState('');
+  const [adding, setAdding] = useState(false);
+
   // Alert modal state
   const [alertVisible, setAlertVisible] = useState(false);
   const [alertTitle, setAlertTitle] = useState('');
@@ -36,12 +52,15 @@ export default function NodesScreen() {
 
   const fetchNodes = useCallback(async () => {
     try {
+      setError(null);
       const data = await nodesService.getAllNodes();
       setNodes(data);
     } catch (err: any) {
       console.error('Failed to fetch nodes:', err.message);
+      setError(err.message || 'Failed to fetch nodes');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, []);
 
@@ -100,6 +119,91 @@ export default function NodesScreen() {
     }
   };
 
+  const openDeleteModal = (node: Node) => {
+    setDeletingNode(node);
+    setDeleteModalVisible(true);
+  };
+
+  const handleDelete = async () => {
+    if (!deletingNode) return;
+
+    setDeleting(true);
+    try {
+      await nodesService.deleteNode(deletingNode.node_number);
+      setNodes((prev) => prev.filter((n) => n.node_number !== deletingNode.node_number));
+      setDeleteModalVisible(false);
+      setAlertTitle('Success');
+      setAlertMessage(`Node ${deletingNode.node_number} has been removed.`);
+      setAlertVisible(true);
+    } catch (err: any) {
+      setAlertTitle('Error');
+      setAlertMessage(err.message || 'Failed to delete node.');
+      setAlertVisible(true);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const openAddModal = () => {
+    const nextNumber = nodes.length > 0
+      ? Math.max(...nodes.map((n) => n.node_number)) + 1
+      : 1;
+    setAddNodeNumber(nextNumber.toString());
+    setAddLocationName('');
+    setAddLatitude('');
+    setAddLongitude('');
+    setAddModalVisible(true);
+  };
+
+  const handleAdd = async () => {
+    const nodeNum = parseInt(addNodeNumber, 10);
+    if (isNaN(nodeNum) || nodeNum <= 0) {
+      setAlertTitle('Invalid Input');
+      setAlertMessage('Node number must be a valid positive number.');
+      setAlertVisible(true);
+      return;
+    }
+
+    if (nodes.some((n) => n.node_number === nodeNum)) {
+      setAlertTitle('Duplicate');
+      setAlertMessage(`Node ${nodeNum} already exists.`);
+      setAlertVisible(true);
+      return;
+    }
+
+    const lat = addLatitude.trim() ? parseFloat(addLatitude) : null;
+    const lng = addLongitude.trim() ? parseFloat(addLongitude) : null;
+
+    if ((addLatitude.trim() && lat === null) || (addLongitude.trim() && lng === null) ||
+        (addLatitude.trim() && isNaN(lat!)) || (addLongitude.trim() && isNaN(lng!))) {
+      setAlertTitle('Invalid Input');
+      setAlertMessage('Latitude and longitude must be valid numbers.');
+      setAlertVisible(true);
+      return;
+    }
+
+    setAdding(true);
+    try {
+      const newNode = await nodesService.addNode({
+        node_number: nodeNum,
+        latitude: lat,
+        longitude: lng,
+        location_name: addLocationName.trim() || null,
+      });
+      setNodes((prev) => [...prev, newNode].sort((a, b) => a.node_number - b.node_number));
+      setAddModalVisible(false);
+      setAlertTitle('Success');
+      setAlertMessage(`Node ${nodeNum} has been added.`);
+      setAlertVisible(true);
+    } catch (err: any) {
+      setAlertTitle('Error');
+      setAlertMessage(err.message || 'Failed to add node.');
+      setAlertVisible(true);
+    } finally {
+      setAdding(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -125,9 +229,40 @@ export default function NodesScreen() {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => {
+              setRefreshing(true);
+              fetchNodes();
+            }}
+            tintColor="#1F2937"
+          />
+        }
       >
         {loading ? (
           <ActivityIndicator size="large" color="#1F2937" style={{ marginTop: 40 }} />
+        ) : error ? (
+          <View style={styles.emptyState}>
+            <Ionicons name="alert-circle-outline" size={48} color="#EF4444" />
+            <Text style={styles.emptyStateTitle}>Failed to load nodes</Text>
+            <Text style={styles.emptyStateSubtitle}>{error}</Text>
+            <TouchableOpacity
+              style={styles.retryButton}
+              onPress={() => {
+                setLoading(true);
+                fetchNodes();
+              }}
+            >
+              <Text style={styles.retryButtonText}>Retry</Text>
+            </TouchableOpacity>
+          </View>
+        ) : nodes.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Ionicons name="hardware-chip-outline" size={48} color="#9CA3AF" />
+            <Text style={styles.emptyStateTitle}>No nodes found</Text>
+            <Text style={styles.emptyStateSubtitle}>Pull down to refresh</Text>
+          </View>
         ) : (
           nodes.map((node) => (
             <TouchableOpacity
@@ -143,21 +278,40 @@ export default function NodesScreen() {
               </View>
               <View style={styles.cardActions}>
                 {isAdmin && (
-                  <TouchableOpacity
-                    style={styles.editButton}
-                    onPress={(e) => {
-                      e.stopPropagation();
-                      openEditModal(node);
-                    }}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                  >
-                    <Ionicons name="create-outline" size={22} color="#6B7280" />
-                  </TouchableOpacity>
+                  <>
+                    <TouchableOpacity
+                      style={styles.editButton}
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        openEditModal(node);
+                      }}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
+                      <Ionicons name="create-outline" size={22} color="#6B7280" />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.editButton}
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        openDeleteModal(node);
+                      }}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
+                      <Ionicons name="trash-outline" size={22} color="#EF4444" />
+                    </TouchableOpacity>
+                  </>
                 )}
                 <Ionicons name="arrow-forward" size={24} color="#1F2937" />
               </View>
             </TouchableOpacity>
           ))
+        )}
+        {/* Add Node Button - admin only, shown at the bottom */}
+        {!loading && !error && isAdmin && (
+          <TouchableOpacity style={styles.addNodeCard} onPress={openAddModal}>
+            <Ionicons name="add-circle-outline" size={32} color="#6B7280" />
+            <Text style={styles.addNodeText}>Add New Node</Text>
+          </TouchableOpacity>
         )}
       </ScrollView>
 
@@ -213,6 +367,103 @@ export default function NodesScreen() {
               >
                 <Text style={styles.saveButtonText}>
                   {saving ? 'Saving...' : 'Save'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal visible={deleteModalVisible} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Remove Node</Text>
+            <Text style={styles.deleteMessage}>
+              Are you sure you want to remove Node {deletingNode?.node_number}
+              {deletingNode?.location_name ? ` (${deletingNode.location_name})` : ''}?
+              This action cannot be undone.
+            </Text>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setDeleteModalVisible(false)}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.deleteConfirmButton, deleting && { opacity: 0.6 }]}
+                onPress={handleDelete}
+                disabled={deleting}
+              >
+                <Text style={styles.saveButtonText}>
+                  {deleting ? 'Removing...' : 'Remove'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Add Node Modal */}
+      <Modal visible={addModalVisible} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Add New Node</Text>
+
+            <Text style={styles.inputLabel}>Node Number</Text>
+            <TextInput
+              style={styles.input}
+              value={addNodeNumber}
+              onChangeText={setAddNodeNumber}
+              placeholder="e.g. 1"
+              placeholderTextColor="#6B7280"
+              keyboardType="numeric"
+            />
+
+            <Text style={styles.inputLabel}>Location Name</Text>
+            <TextInput
+              style={styles.input}
+              value={addLocationName}
+              onChangeText={setAddLocationName}
+              placeholder="Enter location name (optional)"
+              placeholderTextColor="#6B7280"
+            />
+
+            <Text style={styles.inputLabel}>Latitude</Text>
+            <TextInput
+              style={styles.input}
+              value={addLatitude}
+              onChangeText={setAddLatitude}
+              placeholder="e.g. 14.5995 (optional)"
+              placeholderTextColor="#6B7280"
+              keyboardType="numeric"
+            />
+
+            <Text style={styles.inputLabel}>Longitude</Text>
+            <TextInput
+              style={styles.input}
+              value={addLongitude}
+              onChangeText={setAddLongitude}
+              placeholder="e.g. 120.9842 (optional)"
+              placeholderTextColor="#6B7280"
+              keyboardType="numeric"
+            />
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setAddModalVisible(false)}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.saveButton, adding && { opacity: 0.6 }]}
+                onPress={handleAdd}
+                disabled={adding}
+              >
+                <Text style={styles.saveButtonText}>
+                  {adding ? 'Adding...' : 'Add'}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -309,6 +560,68 @@ const styles = StyleSheet.create({
   },
   editButton: {
     padding: 6,
+  },
+  addNodeCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 32,
+    padding: 40,
+    marginBottom: 20,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#D1D5DB',
+    borderStyle: 'dashed',
+    gap: 10,
+  },
+  addNodeText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+  deleteMessage: {
+    fontSize: 15,
+    color: '#D1D1D6',
+    textAlign: 'center',
+    marginBottom: 20,
+    lineHeight: 22,
+  },
+  deleteConfirmButton: {
+    flex: 1,
+    paddingVertical: 12,
+    marginLeft: 8,
+    borderRadius: 10,
+    backgroundColor: '#EF4444',
+    alignItems: 'center',
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 60,
+    gap: 8,
+  },
+  emptyStateTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#374151',
+    marginTop: 8,
+  },
+  emptyStateSubtitle: {
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'center',
+  },
+  retryButton: {
+    marginTop: 16,
+    backgroundColor: '#1F2937',
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 15,
   },
   // Edit Modal styles
   modalOverlay: {

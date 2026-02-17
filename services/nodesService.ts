@@ -40,6 +40,31 @@ const nodesService = {
 
     if (error) throw new Error(error.message);
   },
+
+  addNode: async (node: {
+    node_number: number;
+    latitude: number | null;
+    longitude: number | null;
+    location_name: string | null;
+  }): Promise<Node> => {
+    const { data, error } = await supabase
+      .from('nodes')
+      .insert(node)
+      .select('node_number, latitude, longitude, location_name')
+      .single();
+
+    if (error) throw new Error(error.message);
+    return data;
+  },
+
+  deleteNode: async (nodeNumber: number) => {
+    const { error } = await supabase
+      .from('nodes')
+      .delete()
+      .eq('node_number', nodeNumber);
+
+    if (error) throw new Error(error.message);
+  },
 };
 
 export default nodesService;
