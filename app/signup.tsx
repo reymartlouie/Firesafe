@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import CustomModalAlert from './CustomModalAlert';
 import authService from '../services/authService';
+import pushNotificationService from '../services/pushNotificationService';
 import { supabase } from '../lib/supabaseClient';
 
 export default function SignUpScreen() {
@@ -68,6 +69,13 @@ export default function SignUpScreen() {
 
       // Signup if user doesn't exist
       await authService.signup(username, contactNumber, password);
+
+      // Register for push notifications after successful signup
+      const expoPushToken = await pushNotificationService.registerForPushNotifications();
+      if (expoPushToken) {
+        await pushNotificationService.savePushToken(expoPushToken);
+        console.log('Push notifications registered:', expoPushToken);
+      }
 
       setModalMessage('Account successfully registered!');
       setModalVisible(true);
