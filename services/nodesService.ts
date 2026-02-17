@@ -65,6 +65,23 @@ const nodesService = {
 
     if (error) throw new Error(error.message);
   },
+
+  subscribeToNodes: (callback: () => void) => {
+    const channel = supabase
+      .channel('nodes-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'nodes' },
+        () => {
+          callback();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  },
 };
 
 export default nodesService;

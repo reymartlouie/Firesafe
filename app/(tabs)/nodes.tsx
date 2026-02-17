@@ -66,6 +66,14 @@ export default function NodesScreen() {
 
   useEffect(() => {
     fetchNodes();
+
+    const unsubscribe = nodesService.subscribeToNodes(() => {
+      fetchNodes();
+    });
+
+    return () => {
+      unsubscribe();
+    };
   }, [fetchNodes]);
 
   const openEditModal = (node: Node) => {

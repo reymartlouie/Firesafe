@@ -78,6 +78,21 @@ const pushNotificationService = {
         throw new Error('User not authenticated');
       }
 
+      // Check if this exact token already exists for this user
+      const { data: existing } = await supabase
+        .from('push_tokens')
+        .select('expo_push_token')
+        .eq('user_id', user.id)
+        .eq('expo_push_token', expoPushToken)
+        .maybeSingle();
+
+      if (existing) {
+        // Token already saved, no action needed
+        await SecureStore.setItemAsync(PUSH_TOKEN_KEY, expoPushToken);
+        console.log('Push token already exists, skipping save');
+        return true;
+      }
+
       // Delete existing tokens for this user, then insert the new one
       await supabase
         .from('push_tokens')
