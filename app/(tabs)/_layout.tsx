@@ -1,7 +1,24 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useEffect } from 'react';
+import { AdminProvider, useAdmin } from '../../contexts/AdminContext';
+import authService from '../../services/authService';
 
-export default function TabLayout() {
+function TabLayoutInner() {
+  const { setIsAdmin } = useAdmin();
+
+  useEffect(() => {
+    const checkAdmin = async () => {
+      try {
+        const user = await authService.getUser();
+        setIsAdmin(user.is_admin === true);
+      } catch {
+        setIsAdmin(false);
+      }
+    };
+    checkAdmin();
+  }, [setIsAdmin]);
+
   return (
     <Tabs
       screenOptions={{
@@ -54,4 +71,12 @@ export default function TabLayout() {
       />
     </Tabs>
   );
-};
+}
+
+export default function TabLayout() {
+  return (
+    <AdminProvider>
+      <TabLayoutInner />
+    </AdminProvider>
+  );
+}

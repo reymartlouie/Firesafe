@@ -34,7 +34,14 @@ const authService = {
 
     if (error) throw new Error(error.message);
 
-    return data.user;
+    // Fetch profile to get admin status
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', data.user.id)
+      .maybeSingle();
+
+    return { ...data.user, is_admin: profile?.is_admin ?? false };
   },
 
   // Logout user
@@ -51,7 +58,7 @@ const authService = {
 
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('username, contact_number')
+      .select('username, contact_number, is_admin')
       .eq('id', user.id)
       .maybeSingle();
 
