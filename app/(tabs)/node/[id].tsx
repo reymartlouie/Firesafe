@@ -275,7 +275,7 @@ export default function NodeDetailScreen() {
                     {formatEventTime(latestEvent.event_timestamp)}
                   </Text>
                   <Text style={styles.statusLocation}>
-                    {latestEvent.sensor_nodes.location_name}
+                    {latestEvent.nodes.location_name}
                   </Text>
                 </View>
               </View>

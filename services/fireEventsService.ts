@@ -4,10 +4,10 @@ import { supabase } from '../lib/supabaseClient';
  * Interface for Fire Event data structure
  * 
  * Non-Technical: This defines what information each fire event contains.
- * Now includes sensor_nodes data via JOIN for location information.
+ * Now includes nodes data via JOIN for location information.
  * 
  * Technical: TypeScript interface matching the fire_events table schema
- * with nested sensor_nodes relationship from JOIN query.
+ * with nested nodes relationship from JOIN query.
  */
 export interface FireEvent {
   id: string;
@@ -23,8 +23,8 @@ export interface FireEvent {
   created_at: string;
   session_id: string | null;
   
-  // Nested sensor_nodes data (from JOIN)
-  sensor_nodes: {
+  // Nested nodes data (from JOIN)
+  nodes: {
     location_name: string;
     latitude: number;
     longitude: number;
@@ -33,14 +33,14 @@ export interface FireEvent {
 
 class FireEventsService {
   /**
-   * Base Supabase select query with sensor_nodes JOIN
+   * Base Supabase select query with nodes JOIN
    * 
    * Non-Technical: Standard query template that includes location data
    * Technical: Supabase automatically JOINs via foreign key relationship
    */
   private baseSelect = `
     *,
-    sensor_nodes (
+    nodes (
       location_name,
       latitude,
       longitude
@@ -51,7 +51,7 @@ class FireEventsService {
    * Get the latest fire event (most recent by event_timestamp)
    * 
    * Non-Technical: Gets the most recent sensor reading with location info
-   * Technical: Queries fire_events with sensor_nodes JOIN, ordered by
+   * Technical: Queries fire_events with nodes JOIN, ordered by
    * event_timestamp descending, returns single record
    * 
    * @returns Promise<FireEvent | null> - Latest event or null if none exist
@@ -81,7 +81,7 @@ class FireEventsService {
    * 
    * Technical: Queries fire_events with pagination (limit + offset),
    * ordered by event_timestamp descending. Also fetches total count for
-   * calculating total pages. Includes sensor_nodes JOIN.
+   * calculating total pages. Includes nodes JOIN.
    * 
    * @param page - Page number (1-indexed)
    * @param limit - Number of records per page (default: 5)
@@ -133,7 +133,7 @@ class FireEventsService {
    * Non-Technical: Gets all events from a specific sensor node with location
    * (e.g., all readings from Node 1)
    * 
-   * Technical: Filters fire_events by node column, includes sensor_nodes JOIN
+   * Technical: Filters fire_events by node column, includes nodes JOIN
    * 
    * @param nodeNumber - The node ID (1, 2, 3, or 4)
    * @returns Array of FireEvent objects for that node
@@ -161,7 +161,7 @@ class FireEventsService {
    * (e.g., all "High" risk events) with location information
    * 
    * Technical: Filters fire_events by risk column (case-insensitive match),
-   * includes sensor_nodes JOIN
+   * includes nodes JOIN
    * 
    * @param riskLevel - Risk level string (e.g., 'High', 'Critical')
    * @returns Array of FireEvent objects matching the risk level
@@ -190,7 +190,7 @@ class FireEventsService {
    * 
    * Technical: Uses Supabase realtime subscriptions to listen for INSERT events
    * on fire_events table. Since realtime doesn't support JOINs, we manually
-   * fetch sensor_nodes data for each new event. Cleanup is handled by calling
+   * fetch nodes data for each new event. Cleanup is handled by calling
    * .unsubscribe() on the returned subscription.
    * 
    * @param callback - Function to call when new event arrives
@@ -209,18 +209,18 @@ class FireEventsService {
         async (payload) => {
           const newEvent = payload.new as any;
           
-          // Fetch sensor_nodes data for this event
+          // Fetch nodes data for this event
           // (realtime subscriptions don't support JOINs)
           const { data: sensorNode } = await supabase
-            .from('sensor_nodes')
+            .from('nodes')
             .select('location_name, latitude, longitude')
             .eq('node_number', newEvent.node)
             .single();
 
-          // Combine event with sensor_nodes data
+          // Combine event with nodes data
           const enrichedEvent: FireEvent = {
             ...newEvent,
-            sensor_nodes: sensorNode || {
+            nodes: sensorNode || {
               location_name: `Node ${newEvent.node}`,
               latitude: 0,
               longitude: 0,
@@ -243,7 +243,7 @@ class FireEventsService {
    * 
    * Technical: Maps node numbers to location names using a hardcoded object.
    * This method is kept for backward compatibility but new code should use
-   * event.sensor_nodes.location_name instead.
+   * event.nodes.location_name instead.
    * 
    * @param nodeNumber - Node ID (1-4)
    * @returns Location name string

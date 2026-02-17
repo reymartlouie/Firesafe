@@ -7,7 +7,7 @@ interface FireEvent {
   id: string;
   risk: string;
   event_timestamp: string;
-  sensor_nodes: {
+  nodes: {
     latitude: number;
     longitude: number;
   };
@@ -43,10 +43,10 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Fetch the fire event details with sensor_nodes location data
+    // Fetch the fire event details with nodes location data
     const { data: fireEvent, error: eventError } = await supabase
       .from("fire_events")
-      .select("id, risk, event_timestamp, sensor_nodes(latitude, longitude)")
+      .select("id, risk, event_timestamp, nodes(latitude, longitude)")
       .eq("id", event_id)
       .single();
 
@@ -80,7 +80,7 @@ serve(async (req) => {
     }
 
     // Prepare push notification messages
-    const { latitude, longitude } = fireEvent.sensor_nodes;
+    const { latitude, longitude } = fireEvent.nodes;
     const messages = tokens.map((token: PushToken) => ({
       to: token.expo_push_token,
       sound: "default",
