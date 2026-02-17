@@ -78,11 +78,18 @@ const pushNotificationService = {
         throw new Error('User not authenticated');
       }
 
-      // Call the database function
-      const { error: saveError } = await supabase.rpc('save_push_token', {
-        p_user_id: user.id,
-        p_expo_push_token: expoPushToken,
-      });
+      // Delete existing tokens for this user, then insert the new one
+      await supabase
+        .from('push_tokens')
+        .delete()
+        .eq('user_id', user.id);
+
+      const { error: saveError } = await supabase
+        .from('push_tokens')
+        .insert({
+          user_id: user.id,
+          expo_push_token: expoPushToken,
+        });
 
       if (saveError) {
         throw saveError;
