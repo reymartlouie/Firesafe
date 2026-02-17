@@ -286,7 +286,7 @@ export default function DashboardScreen() {
                     {formatEventTime(latestEvent.event_timestamp)}
                   </Text>
                   <Text style={styles.statusLocation}>
-                    {latestEvent.sensor_nodes.location_name}
+                    {latestEvent.sensor_nodes?.location_name ?? 'Unknown Location'}
                   </Text>
                 </View>
               </View>
