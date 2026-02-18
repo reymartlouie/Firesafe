@@ -7,6 +7,7 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
+      "prebuildCommand": "echo $GOOGLE_SERVICES_JSON_BASE64 | base64 -d > android/app/google-services.json",
       "env": {
           "GOOGLE_SERVICES_JSON_BASE64": "@GOOGLE_SERVICES_JSON_BASE64",
           "EXPO_PUBLIC_SUPABASE_URL": "https://cfoxncdbzeiilexpylhx.supabase.co",
@@ -15,6 +16,7 @@
     },
     "preview": {
       "distribution": "internal",
+      "prebuildCommand": "echo $GOOGLE_SERVICES_JSON_BASE64 | base64 -d > android/app/google-services.json",
       "env": {
           "GOOGLE_SERVICES_JSON_BASE64": "@GOOGLE_SERVICES_JSON_BASE64",
           "EXPO_PUBLIC_SUPABASE_URL": "https://cfoxncdbzeiilexpylhx.supabase.co",
@@ -23,6 +25,7 @@
     },
     "production": {
       "autoIncrement": true,
+      "prebuildCommand": "echo $GOOGLE_SERVICES_JSON_BASE64 | base64 -d > android/app/google-services.json",
       "env": {
           "GOOGLE_SERVICES_JSON_BASE64": "@GOOGLE_SERVICES_JSON_BASE64",
           "EXPO_PUBLIC_SUPABASE_URL": "https://cfoxncdbzeiilexpylhx.supabase.co",
