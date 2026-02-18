@@ -537,7 +537,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 20,
     paddingTop: 24,
-    paddingBottom: 100,
+    paddingBottom: 140,
   },
   nodeCard: {
     backgroundColor: '#F3F4F6',

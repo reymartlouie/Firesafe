@@ -79,13 +79,20 @@ const formatEventTime = (timestamp: string, includeDate: boolean = false) => {
 
 export default function DashboardScreen() {
   const { width } = useWindowDimensions();
-  const hPad         = Math.min(Math.round(width * 0.053), 40);
-  const cardPadV     = Math.min(Math.round(width * 0.064), 40);
-  const histPad      = Math.min(Math.round(width * 0.075), 48);
-  const statusFont   = Math.min(Math.round(width * 0.17),  80);
-  const rowPadV      = Math.min(Math.round(width * 0.037), 20);
-  const cellFont     = Math.min(Math.round(width * 0.037), 16);
-  const hdrFont      = Math.min(Math.round(width * 0.034), 15);
+  const hPad        = Math.min(Math.round(width * 0.07),   48);
+  const cardPadV    = Math.min(Math.round(width * 0.064),  40);
+  const histPad     = Math.min(Math.round(width * 0.075),  48);
+  const statusFont  = Math.min(Math.round(width * 0.14),   68);
+  const rowPadV     = Math.min(Math.round(width * 0.037),  20);
+  const cellFont    = Math.min(Math.round(width * 0.037),  16);
+  const hdrFont     = Math.min(Math.round(width * 0.034),  15);
+  const titleFont   = Math.min(Math.round(width * 0.096),  44);
+  const sectionFont = Math.min(Math.round(width * 0.075),  36);
+  const bodyFont    = Math.min(Math.round(width * 0.04),   18);
+  const smallFont   = Math.min(Math.round(width * 0.032),  14);
+  const avatarSize  = Math.min(Math.round(width * 0.128),  56);
+  const iconSize    = Math.min(Math.round(width * 0.043),  20);
+  const iconGap     = Math.min(Math.round(width * 0.064),  28);
 
   const [user, setUser] = useState<any>(null);
   const [latestEvent, setLatestEvent] = useState<FireEvent | null>(null);
@@ -260,10 +267,10 @@ export default function DashboardScreen() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingHorizontal: hPad }]}>
         <View>
-          <Text style={styles.headerTitle}>Dashboard</Text>
-          <Text style={styles.headerSubtitle}>
+          <Text style={[styles.headerTitle, { fontSize: titleFont }]}>Dashboard</Text>
+          <Text style={[styles.headerSubtitle, { fontSize: bodyFont }]}>
             Welcome back, {user?.username || 'User'}!
           </Text>
         </View>
@@ -271,10 +278,10 @@ export default function DashboardScreen() {
           style={styles.accountButton}
           onPress={() => router.push('/account')}
         >
-          <View style={styles.accountEmojiContainer}>
-            <Text style={styles.accountEmoji}>👤</Text>
+          <View style={[styles.accountEmojiContainer, { width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 }]}>
+            <Text style={[styles.accountEmoji, { fontSize: Math.round(avatarSize * 0.58) }]}>👤</Text>
           </View>
-          <Text style={styles.accountText}>Account</Text>
+          <Text style={[styles.accountText, { fontSize: smallFont }]}>Account</Text>
         </TouchableOpacity>
       </View>
 
@@ -292,41 +299,41 @@ export default function DashboardScreen() {
       >
         {/* Latest Status Card */}
         <View style={[styles.section, { paddingHorizontal: hPad }]}>
-          <Text style={styles.sectionTitle}>Latest Status</Text>
+          <Text style={[styles.sectionTitle, { fontSize: sectionFont }]}>Latest Status</Text>
 
           {latestEvent ? (
             <View style={[styles.statusCard, getRiskCardColors(latestEvent.risk), { padding: hPad, paddingVertical: cardPadV }]}>
               <View style={styles.statusHeader}>
                 <View style={styles.statusHeaderLeft}>
-                  <Text style={styles.statusTime}>
+                  <Text style={[styles.statusTime, { fontSize: smallFont }]}>
                     {formatEventTime(latestEvent.event_timestamp)}
                   </Text>
-                  <Text style={styles.statusLocation}>
+                  <Text style={[styles.statusLocation, { fontSize: bodyFont }]}>
                     {latestEvent.nodes?.location_name ?? 'Unknown Location'}
                   </Text>
                 </View>
               </View>
-              
+
               <View style={styles.statusBody}>
                 <View style={styles.statusLeft}>
-                  <Text style={[
-                    styles.statusLevel,
-                    { color: getRiskColor(latestEvent.risk), fontSize: statusFont }
-                  ]}>
+                  <Text
+                    numberOfLines={1}
+                    style={[styles.statusLevel, { color: getRiskColor(latestEvent.risk), fontSize: statusFont }]}
+                  >
                     {latestEvent.risk.toUpperCase()}
                   </Text>
-                  <View style={styles.iconRow}>
+                  <View style={[styles.iconRow, { gap: iconGap }]}>
                     <View style={styles.iconItem}>
-                      <FontAwesome6 name="temperature-three-quarters" size={16} color="#1F2937" />
-                      <Text style={styles.iconText}>{latestEvent.temperature?.toFixed(1) ?? 'N/A'}°C</Text>
+                      <FontAwesome6 name="temperature-three-quarters" size={iconSize} color="#1F2937" />
+                      <Text style={[styles.iconText, { fontSize: cellFont }]}>{latestEvent.temperature?.toFixed(1) ?? 'N/A'}°C</Text>
                     </View>
                     <View style={styles.iconItem}>
-                      <Entypo name="air" size={16} color="#1F2937" />
-                      <Text style={styles.iconText}>{latestEvent.humidity?.toFixed(1) ?? 'N/A'}%</Text>
+                      <Entypo name="air" size={iconSize} color="#1F2937" />
+                      <Text style={[styles.iconText, { fontSize: cellFont }]}>{latestEvent.humidity?.toFixed(1) ?? 'N/A'}%</Text>
                     </View>
                     <View style={styles.iconItem}>
-                      <MaterialCommunityIcons name="smoke" size={16} color="#1F2937" />
-                      <Text style={styles.iconText}>{latestEvent.smoke_gas?.toFixed(0) ?? 'N/A'}PPM</Text>
+                      <MaterialCommunityIcons name="smoke" size={iconSize} color="#1F2937" />
+                      <Text style={[styles.iconText, { fontSize: cellFont }]}>{latestEvent.smoke_gas?.toFixed(0) ?? 'N/A'}PPM</Text>
                     </View>
                   </View>
                 </View>
@@ -334,17 +341,17 @@ export default function DashboardScreen() {
             </View>
           ) : (
             <View style={[styles.statusCard, { padding: hPad, paddingVertical: cardPadV }]}>
-              <Text style={styles.noDataText}>No fire events recorded yet</Text>
+              <Text style={[styles.noDataText, { fontSize: cellFont }]}>No fire events recorded yet</Text>
             </View>
           )}
         </View>
 
         {/* History Section */}
         <View style={[styles.section, { paddingHorizontal: hPad }]}>
-          <Text style={styles.sectionTitle}>History</Text>
+          <Text style={[styles.sectionTitle, { fontSize: sectionFont }]}>History</Text>
           <View style={[styles.historyCard, { padding: histPad }]}>
             <View style={styles.historyHeader}>
-              <Text style={styles.historyPage}>
+              <Text style={[styles.historyPage, { fontSize: smallFont }]}>
                 Page {currentPage}/{totalPages || 1}
               </Text>
             </View>
@@ -389,6 +396,7 @@ export default function DashboardScreen() {
                     />
                     <Text style={[
                       styles.paginationText,
+                      { fontSize: smallFont },
                       currentPage === 1 && styles.paginationTextDisabled
                     ]}>
                       Previous
@@ -402,6 +410,7 @@ export default function DashboardScreen() {
                   >
                     <Text style={[
                       styles.paginationText,
+                      { fontSize: smallFont },
                       currentPage >= totalPages && styles.paginationTextDisabled
                     ]}>
                       Next
@@ -415,7 +424,7 @@ export default function DashboardScreen() {
                 </View>
               </>
             ) : (
-              <Text style={styles.noDataText}>No history available</Text>
+              <Text style={[styles.noDataText, { fontSize: cellFont }]}>No history available</Text>
             )}
           </View>
         </View>
@@ -442,19 +451,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    paddingHorizontal: 20,
     paddingTop: 60,
     paddingBottom: 16,
     backgroundColor: '#FFFFFF',
   },
   headerTitle: {
-    fontSize: 36,
     fontWeight: '700',
     color: '#000000',
     marginBottom: 10,
   },
   headerSubtitle: {
-    fontSize: 15,
     color: '#000000',
     fontWeight: '400',
   },
@@ -462,19 +468,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   accountEmojiContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
     backgroundColor: '#E5E7EB',
     marginBottom: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  accountEmoji: {
-    fontSize: 28,
-  },
+  accountEmoji: {},
   accountText: {
-    fontSize: 11,
     color: '#000000',
     fontWeight: '400',
   },
@@ -482,14 +482,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 120,
+    paddingBottom: 140,
   },
   section: {
     paddingTop: 16,
     marginBottom: 8,
   },
   sectionTitle: {
-    fontSize: 28,
     fontWeight: '700',
     color: '#000000',
     marginBottom: 16,
@@ -507,15 +506,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statusTime: {
-    fontSize: 12,
     color: '#6B7280',
     marginBottom: 4,
   },
   statusLocation: {
-    fontSize: 15,
     fontWeight: '600',
     color: '#1F2937',
-    lineHeight: 20,
   },
   nodeNumber: {
     fontSize: 13,
@@ -540,7 +536,6 @@ const styles = StyleSheet.create({
   iconRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 24,
     marginTop: 12,
   },
   iconItem: {
@@ -549,7 +544,6 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   iconText: {
-    fontSize: 14,
     color: '#1F2937',
     fontWeight: '400',
   },
@@ -564,7 +558,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   historyPage: {
-    fontSize: 12,
     color: '#9CA3AF',
   },
   historyTable: {
@@ -621,14 +614,12 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   paginationText: {
-    fontSize: 13,
     color: '#9CA3AF',
   },
   paginationTextDisabled: {
     color: '#D1D5DB',
   },
   noDataText: {
-    fontSize: 14,
     color: '#9CA3AF',
     textAlign: 'center',
     paddingVertical: 20,
