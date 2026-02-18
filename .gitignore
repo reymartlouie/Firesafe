@@ -2,7 +2,8 @@
 # CRITICAL SECRETS - NEVER COMMIT!
 # =============================
 
-# iOS Firebase config (if used)
+# Firebase config files
+android/app/google-services.json
 ios/GoogleService-Info.plist
 
 # Base64 Encoded Secrets
