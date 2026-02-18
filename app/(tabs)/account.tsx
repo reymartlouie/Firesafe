@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import authService from '../../services/authService';
 import pushNotificationService from '../../services/pushNotificationService';
@@ -77,10 +77,7 @@ export default function AccountScreen() {
       {/* Profile Section */}
       <View style={styles.profileSection}>
         <View style={styles.profileImageContainer}>
-          <Image 
-            source={{ uri: 'https://via.placeholder.com/250' }}
-            style={styles.profileImage}
-          />
+          <Text style={styles.profileEmoji}>👤</Text>
         </View>
       </View>
 
@@ -129,11 +126,11 @@ const styles = StyleSheet.create({
     height: 250,
     borderRadius: 125,
     backgroundColor: '#E5E7EB',
-    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  profileImage: {
-    width: '100%',
-    height: '100%',
+  profileEmoji: {
+    fontSize: 140,
   },
   infoSection: {
     alignItems: 'center',

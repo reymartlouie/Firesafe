@@ -4,15 +4,15 @@ import { FontAwesome6 } from '@expo/vector-icons';
 import { Entypo } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { 
-  Image, 
-  ScrollView, 
-  StyleSheet, 
-  Text, 
-  TouchableOpacity, 
-  View, 
-  ActivityIndicator, 
-  RefreshControl 
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  ActivityIndicator,
+  RefreshControl,
+  useWindowDimensions,
 } from 'react-native';
 import authService from '../../services/authService';
 import fireEventsService, { FireEvent } from '../../services/fireEventsService';
@@ -78,6 +78,15 @@ const formatEventTime = (timestamp: string, includeDate: boolean = false) => {
 };
 
 export default function DashboardScreen() {
+  const { width } = useWindowDimensions();
+  const hPad         = Math.min(Math.round(width * 0.053), 40);
+  const cardPadV     = Math.min(Math.round(width * 0.064), 40);
+  const histPad      = Math.min(Math.round(width * 0.075), 48);
+  const statusFont   = Math.min(Math.round(width * 0.17),  80);
+  const rowPadV      = Math.min(Math.round(width * 0.037), 20);
+  const cellFont     = Math.min(Math.round(width * 0.037), 16);
+  const hdrFont      = Math.min(Math.round(width * 0.034), 15);
+
   const [user, setUser] = useState<any>(null);
   const [latestEvent, setLatestEvent] = useState<FireEvent | null>(null);
   const [historyEvents, setHistoryEvents] = useState<FireEvent[]>([]);
@@ -231,6 +240,14 @@ export default function DashboardScreen() {
     };
   };
 
+  const getRiskBadgeColors = (risk: string) => {
+    const riskUpper = risk?.toUpperCase();
+    if (riskUpper === 'CRITICAL') {
+      return { backgroundColor: '#FEE2E2', borderColor: '#FCA5A5' };
+    }
+    return { backgroundColor: '#FFEDD5', borderColor: '#FDBA74' };
+  };
+
   if (loading) {
     return (
       <View style={[styles.container, styles.centerContent]}>
@@ -250,14 +267,13 @@ export default function DashboardScreen() {
             Welcome back, {user?.username || 'User'}!
           </Text>
         </View>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.accountButton}
           onPress={() => router.push('/account')}
         >
-          <Image 
-            source={{ uri: 'https://via.placeholder.com/50' }}
-            style={styles.accountImage}
-          />
+          <View style={styles.accountEmojiContainer}>
+            <Text style={styles.accountEmoji}>👤</Text>
+          </View>
           <Text style={styles.accountText}>Account</Text>
         </TouchableOpacity>
       </View>
@@ -275,11 +291,11 @@ export default function DashboardScreen() {
         }
       >
         {/* Latest Status Card */}
-        <View style={styles.section}>
+        <View style={[styles.section, { paddingHorizontal: hPad }]}>
           <Text style={styles.sectionTitle}>Latest Status</Text>
-          
+
           {latestEvent ? (
-            <View style={[styles.statusCard, getRiskCardColors(latestEvent.risk)]}>
+            <View style={[styles.statusCard, getRiskCardColors(latestEvent.risk), { padding: hPad, paddingVertical: cardPadV }]}>
               <View style={styles.statusHeader}>
                 <View style={styles.statusHeaderLeft}>
                   <Text style={styles.statusTime}>
@@ -295,7 +311,7 @@ export default function DashboardScreen() {
                 <View style={styles.statusLeft}>
                   <Text style={[
                     styles.statusLevel,
-                    { color: getRiskColor(latestEvent.risk) }
+                    { color: getRiskColor(latestEvent.risk), fontSize: statusFont }
                   ]}>
                     {latestEvent.risk.toUpperCase()}
                   </Text>
@@ -317,16 +333,16 @@ export default function DashboardScreen() {
               </View>
             </View>
           ) : (
-            <View style={styles.statusCard}>
+            <View style={[styles.statusCard, { padding: hPad, paddingVertical: cardPadV }]}>
               <Text style={styles.noDataText}>No fire events recorded yet</Text>
             </View>
           )}
         </View>
 
         {/* History Section */}
-        <View style={styles.section}>
+        <View style={[styles.section, { paddingHorizontal: hPad }]}>
           <Text style={styles.sectionTitle}>History</Text>
-          <View style={styles.historyCard}>
+          <View style={[styles.historyCard, { padding: histPad }]}>
             <View style={styles.historyHeader}>
               <Text style={styles.historyPage}>
                 Page {currentPage}/{totalPages || 1}
@@ -337,24 +353,24 @@ export default function DashboardScreen() {
               <>
                 <View style={styles.historyTable}>
                   <View style={styles.tableHeader}>
-                    <Text style={[styles.tableHeaderText, styles.colNode]}>Node</Text>
-                    <Text style={[styles.tableHeaderText, styles.colRisk]}>Risk</Text>
-                    <Text style={[styles.tableHeaderText, styles.colDate]}>Date | Time</Text>
+                    <Text style={[styles.tableHeaderText, styles.colRisk, { fontSize: hdrFont }]}>Risk</Text>
+                    <Text style={[styles.tableHeaderText, styles.colDate, { fontSize: hdrFont }]}>Date | Time</Text>
+                    <Text style={[styles.tableHeaderText, styles.colNode, { fontSize: hdrFont }]}>Node</Text>
                   </View>
 
                   {historyEvents.map((event) => (
-                    <View key={event.id} style={styles.tableRow}>
-                      <Text style={[styles.tableCell, styles.colNode]}>{event.node}</Text>
-                      <Text style={[
-                        styles.tableCell,
-                        styles.colRisk,
-                        { color: getRiskColor(event.risk) }
-                      ]}>
-                        {event.risk}
-                      </Text>
-                      <Text style={[styles.tableCell, styles.colDate]}>
+                    <View key={event.id} style={[styles.tableRow, { paddingVertical: rowPadV }]}>
+                      <View style={styles.colRisk}>
+                        <View style={[styles.riskBadge, getRiskBadgeColors(event.risk)]}>
+                          <Text style={[styles.tableCell, { color: getRiskColor(event.risk), fontSize: cellFont }]}>
+                            {event.risk}
+                          </Text>
+                        </View>
+                      </View>
+                      <Text style={[styles.tableCell, styles.colDate, { fontSize: cellFont }]}>
                         {formatEventTime(event.event_timestamp, true)}
                       </Text>
+                      <Text style={[styles.tableCell, styles.colNode, { fontSize: cellFont }]}>{event.node}</Text>
                     </View>
                   ))}
                 </View>
@@ -445,12 +461,17 @@ const styles = StyleSheet.create({
   accountButton: {
     alignItems: 'center',
   },
-  accountImage: {
+  accountEmojiContainer: {
     width: 48,
     height: 48,
     borderRadius: 24,
     backgroundColor: '#E5E7EB',
     marginBottom: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  accountEmoji: {
+    fontSize: 28,
   },
   accountText: {
     fontSize: 11,
@@ -464,7 +485,6 @@ const styles = StyleSheet.create({
     paddingBottom: 120,
   },
   section: {
-    paddingHorizontal: 20,
     paddingTop: 16,
     marginBottom: 8,
   },
@@ -477,8 +497,6 @@ const styles = StyleSheet.create({
   statusCard: {
     backgroundColor: '#FFEDD5',
     borderRadius: 24,
-    padding: 20,
-    paddingVertical: 24,
     borderWidth: 1,
     borderColor: '#FDBA74',
   },
@@ -538,7 +556,6 @@ const styles = StyleSheet.create({
   historyCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 24,
-    padding: 28,
     borderWidth: 1,
     borderColor: '#E5E7EB',
   },
@@ -561,29 +578,37 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   tableHeaderText: {
-    fontSize: 13,
     fontWeight: '700',
     color: '#000000',
   },
   tableRow: {
     flexDirection: 'row',
-    paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: '#F3F4F6',
   },
   tableCell: {
-    fontSize: 14,
     color: '#1F2937',
     fontWeight: '400',
   },
   colNode: {
     width: '20%',
+    paddingLeft: 8,
+    textAlign: 'right',
   },
   colRisk: {
-    width: '25%',
+    width: '32%',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  riskBadge: {
+    borderWidth: 1,
+    borderRadius: 6,
+    padding: 4,
+    alignSelf: 'flex-start',
   },
   colDate: {
     flex: 1,
+    paddingLeft: 8,
   },
   paginationContainer: {
     flexDirection: 'row',

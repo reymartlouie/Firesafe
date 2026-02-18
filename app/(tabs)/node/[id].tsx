@@ -4,14 +4,15 @@ import { FontAwesome6 } from '@expo/vector-icons';
 import { Entypo } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { 
-  ScrollView, 
-  StyleSheet, 
-  Text, 
-  TouchableOpacity, 
-  View, 
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
   ActivityIndicator,
-  RefreshControl 
+  RefreshControl,
+  useWindowDimensions,
 } from 'react-native';
 import fireEventsService, { FireEvent } from '../../../services/fireEventsService';
 
@@ -71,6 +72,15 @@ const formatEventTime = (timestamp: string, includeDate: boolean = false) => {
 export default function NodeDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const nodeNumber = parseInt(id || '1');
+
+  const { width } = useWindowDimensions();
+  const hPad       = Math.min(Math.round(width * 0.053), 40);
+  const cardPadV   = Math.min(Math.round(width * 0.064), 40);
+  const histPad    = Math.min(Math.round(width * 0.075), 48);
+  const statusFont = Math.min(Math.round(width * 0.17),  80);
+  const rowPadV    = Math.min(Math.round(width * 0.037), 20);
+  const cellFont   = Math.min(Math.round(width * 0.037), 16);
+  const hdrFont    = Math.min(Math.round(width * 0.034), 15);
 
   const [latestEvent, setLatestEvent] = useState<FireEvent | null>(null);
   const [historyEvents, setHistoryEvents] = useState<FireEvent[]>([]);
@@ -218,6 +228,14 @@ export default function NodeDetailScreen() {
     };
   };
 
+  const getRiskBadgeColors = (risk: string) => {
+    const riskUpper = risk?.toUpperCase();
+    if (riskUpper === 'CRITICAL') {
+      return { backgroundColor: '#FEE2E2', borderColor: '#FCA5A5' };
+    }
+    return { backgroundColor: '#FFEDD5', borderColor: '#FDBA74' };
+  };
+
   if (loading) {
     return (
       <View style={[styles.container, styles.centerContent]}>
@@ -259,7 +277,7 @@ export default function NodeDetailScreen() {
         }
       >
         {/* Latest Status */}
-        <View style={styles.section}>
+        <View style={[styles.section, { paddingHorizontal: hPad }]}>
           <Text style={styles.sectionTitle}>Latest Status</Text>
 
           {latestEvent ? (
@@ -267,6 +285,7 @@ export default function NodeDetailScreen() {
               style={[
                 styles.statusCard,
                 getCardColors(latestEvent.risk),
+                { padding: hPad, paddingVertical: cardPadV },
               ]}
             >
               <View style={styles.statusHeader}>
@@ -284,7 +303,7 @@ export default function NodeDetailScreen() {
                 <Text
                   style={[
                     styles.statusLevel,
-                    { color: getRiskColor(latestEvent.risk) }
+                    { color: getRiskColor(latestEvent.risk), fontSize: statusFont }
                   ]}
                 >
                   {latestEvent.risk.toUpperCase()}
@@ -323,7 +342,7 @@ export default function NodeDetailScreen() {
               </View>
             </View>
           ) : (
-            <View style={styles.statusCard}>
+            <View style={[styles.statusCard, { padding: hPad, paddingVertical: cardPadV }]}>
               <Text style={styles.noDataText}>
                 No events recorded for Node {nodeNumber}
               </Text>
@@ -332,10 +351,10 @@ export default function NodeDetailScreen() {
         </View>
 
         {/* Node History */}
-        <View style={styles.section}>
+        <View style={[styles.section, { paddingHorizontal: hPad }]}>
           <Text style={styles.sectionTitle}>Node History</Text>
 
-          <View style={styles.historyCard}>
+          <View style={[styles.historyCard, { padding: histPad }]}>
             <View style={styles.historyHeader}>
               <Text style={styles.historyPage}>
                 Page {currentPage}/{totalPages || 1}
@@ -346,26 +365,24 @@ export default function NodeDetailScreen() {
               <>
                 <View style={styles.historyTable}>
                   <View style={styles.tableHeader}>
-                    <Text style={[styles.tableHeaderText, styles.colRisk]}>
+                    <Text style={[styles.tableHeaderText, styles.colRisk, { fontSize: hdrFont }]}>
                       Risk
                     </Text>
-                    <Text style={[styles.tableHeaderText, styles.colDate]}>
+                    <Text style={[styles.tableHeaderText, styles.colDate, { fontSize: hdrFont }]}>
                       Date | Time
                     </Text>
                   </View>
 
                   {historyEvents.map((event) => (
-                    <View key={event.id} style={styles.tableRow}>
-                      <Text
-                        style={[
-                          styles.tableCell,
-                          styles.colRisk,
-                          { color: getRiskColor(event.risk) },
-                        ]}
-                      >
-                        {event.risk}
-                      </Text>
-                      <Text style={[styles.tableCell, styles.colDate]}>
+                    <View key={event.id} style={[styles.tableRow, { paddingVertical: rowPadV }]}>
+                      <View style={styles.colRisk}>
+                        <View style={[styles.riskBadge, getRiskBadgeColors(event.risk)]}>
+                          <Text style={[styles.tableCell, { color: getRiskColor(event.risk), fontSize: cellFont }]}>
+                            {event.risk}
+                          </Text>
+                        </View>
+                      </View>
+                      <Text style={[styles.tableCell, styles.colDate, { fontSize: cellFont }]}>
                         {formatEventTime(event.event_timestamp, true)}
                       </Text>
                     </View>
@@ -474,7 +491,6 @@ const styles = StyleSheet.create({
   },
 
   section: {
-    paddingHorizontal: 20,
     paddingTop: 24,
   },
   sectionTitle: {
@@ -486,8 +502,6 @@ const styles = StyleSheet.create({
 
   statusCard: {
     borderRadius: 24,
-    padding: 20,
-    paddingVertical: 24,
     borderWidth: 1,
   },
 
@@ -538,7 +552,6 @@ const styles = StyleSheet.create({
   historyCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 24,
-    padding: 28,
     borderWidth: 1,
     borderColor: '#E5E7EB',
   },
@@ -562,26 +575,31 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   tableHeaderText: {
-    fontSize: 13,
     fontWeight: '700',
     color: '#000000',
   },
   tableRow: {
     flexDirection: 'row',
-    paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: '#F3F4F6',
   },
   tableCell: {
-    fontSize: 14,
     fontWeight: '400',
     color: '#1F2937',
   },
   colRisk: {
     width: '30%',
+    justifyContent: 'center',
+  },
+  riskBadge: {
+    borderWidth: 1,
+    borderRadius: 6,
+    padding: 4,
+    alignSelf: 'flex-start',
   },
   colDate: {
     flex: 1,
+    paddingLeft: 8,
   },
 
   paginationContainer: {
