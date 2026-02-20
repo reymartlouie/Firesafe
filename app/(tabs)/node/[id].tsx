@@ -275,9 +275,14 @@ export default function NodeDetailScreen() {
           <Text style={[styles.headerSubtitle, { fontSize: bodyFont }]}>
             {nodeData?.location_name ?? 'Unknown Location'}
           </Text>
-          {nodeData?.latitude != null && nodeData?.longitude != null && (
+          {nodeData?.latitude != null && (
             <Text style={[styles.headerCoords, { fontSize: smallFont }]}>
-              {nodeData.latitude}, {nodeData.longitude}
+              Latitude: {nodeData.latitude}
+            </Text>
+          )}
+          {nodeData?.longitude != null && (
+            <Text style={[styles.headerCoords, { fontSize: smallFont }]}>
+              Longitude: {nodeData.longitude}
             </Text>
           )}
         </View>
@@ -318,9 +323,6 @@ export default function NodeDetailScreen() {
                 <View style={styles.statusHeaderLeft}>
                   <Text style={[styles.statusTime, { fontSize: smallFont }]}>
                     {formatEventTime(latestEvent.event_timestamp)}
-                  </Text>
-                  <Text style={[styles.statusLocation, { fontSize: bodyFont }]}>
-                    {latestEvent.nodes.location_name}
                   </Text>
                 </View>
               </View>
