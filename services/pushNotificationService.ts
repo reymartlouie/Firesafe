@@ -78,40 +78,17 @@ const pushNotificationService = {
         throw new Error('User not authenticated');
       }
 
-      // Check if this exact token already exists for this user
-      const { data: existing } = await supabase
+      // Upsert: insert or update on conflict with the unique expo_push_token constraint
+      const { error: saveError } = await supabase
         .from('push_tokens')
-        .select('expo_push_token')
-        .eq('user_id', user.id)
-        .eq('expo_push_token', expoPushToken)
-        .maybeSingle();
-
-      if (existing) {
-        // Token already saved, no action needed
-        await SecureStore.setItemAsync(PUSH_TOKEN_KEY, expoPushToken);
-        console.log('Push token already exists, skipping save');
-        return true;
-      }
-
-      // Delete existing tokens for this user, then insert the new one
-      await supabase
-        .from('push_tokens')
-        .delete()
-        .eq('user_id', user.id);
-
-      const { data: insertData, error: saveError, count: insertCount } = await supabase
-        .from('push_tokens')
-        .insert({
-          user_id: user.id,
-          expo_push_token: expoPushToken,
-        })
-        .select();
+        .upsert(
+          { user_id: user.id, expo_push_token: expoPushToken },
+          { onConflict: 'expo_push_token' }
+        );
 
       if (saveError) {
         throw saveError;
       }
-
-      console.log('Push token insert result:', { insertData, insertCount });
 
       // Store token locally for use during logout
       await SecureStore.setItemAsync(PUSH_TOKEN_KEY, expoPushToken);
