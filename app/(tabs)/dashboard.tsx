@@ -3,7 +3,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { FontAwesome6 } from '@expo/vector-icons';
 import { Entypo } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -102,16 +102,22 @@ export default function DashboardScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Ref so the realtime callback always reads the latest page without a stale closure
+  const currentPageRef = useRef(1);
+  useEffect(() => {
+    currentPageRef.current = currentPage;
+  }, [currentPage]);
+
   useEffect(() => {
     loadInitialData();
-    
+
     // Subscribe to real-time updates
     const subscription = fireEventsService.subscribeToEvents((newEvent) => {
       console.log('🔥 New fire event detected:', newEvent);
       setLatestEvent(newEvent);
-      // Refresh history to include new event
-      loadHistory(currentPage);
-    });
+      // Refresh history using the ref so we always reload the currently viewed page
+      loadHistory(currentPageRef.current);
+    }, 'dashboard');
 
     return () => {
       subscription.unsubscribe();

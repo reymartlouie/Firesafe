@@ -99,16 +99,19 @@ const pushNotificationService = {
         .delete()
         .eq('user_id', user.id);
 
-      const { error: saveError } = await supabase
+      const { data: insertData, error: saveError, count: insertCount } = await supabase
         .from('push_tokens')
         .insert({
           user_id: user.id,
           expo_push_token: expoPushToken,
-        });
+        })
+        .select();
 
       if (saveError) {
         throw saveError;
       }
+
+      console.log('Push token insert result:', { insertData, insertCount });
 
       // Store token locally for use during logout
       await SecureStore.setItemAsync(PUSH_TOKEN_KEY, expoPushToken);
@@ -134,12 +137,15 @@ const pushNotificationService = {
   // Delete push token when user logs out
   removePushToken: async (expoPushToken: string): Promise<boolean> => {
     try {
-      const { error } = await supabase
+      const { data: deleteData, error, count: deleteCount } = await supabase
         .from('push_tokens')
         .delete()
-        .eq('expo_push_token', expoPushToken);
+        .eq('expo_push_token', expoPushToken)
+        .select();
 
       if (error) throw error;
+
+      console.log('Push token delete result:', { deleteData, deleteCount });
 
       // Clear locally stored token
       await SecureStore.deleteItemAsync(PUSH_TOKEN_KEY);

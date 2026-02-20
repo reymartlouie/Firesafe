@@ -70,8 +70,7 @@ export default function AccountScreen() {
         style={styles.backButton}
         onPress={() => router.back()}
       >
-        <Ionicons name="arrow-back" size={24} color="#000000" />
-        <Text style={styles.backText}>Back</Text>
+        <Ionicons name="arrow-back" size={22} color="#1F2937" />
       </TouchableOpacity>
 
       {/* Profile Section */}
@@ -103,18 +102,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
     position: 'absolute',
     top: 60,
     left: 20,
     zIndex: 10,
-  },
-  backText: {
-    fontSize: 16,
-    color: '#000000',
-    marginLeft: 8,
-    fontWeight: '500',
+    padding: 10,
+    borderRadius: 999,
+    backgroundColor: '#F3F4F6',
   },
   profileSection: {
     alignItems: 'center',

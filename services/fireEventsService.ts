@@ -196,9 +196,9 @@ class FireEventsService {
    * @param callback - Function to call when new event arrives
    * @returns Subscription object (call .unsubscribe() to stop listening)
    */
-  subscribeToEvents(callback: (event: FireEvent) => void) {
+  subscribeToEvents(callback: (event: FireEvent) => void, channelId: string = 'default') {
     const subscription = supabase
-      .channel('fire_events_channel')
+      .channel(`fire_events_channel_${channelId}`)
       .on(
         'postgres_changes',
         {

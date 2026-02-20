@@ -3,7 +3,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { FontAwesome6 } from '@expo/vector-icons';
 import { Entypo } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -95,6 +95,12 @@ export default function NodeDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Ref so the realtime callback always reads the latest page without a stale closure
+  const currentPageRef = useRef(1);
+  useEffect(() => {
+    currentPageRef.current = currentPage;
+  }, [currentPage]);
+
   useEffect(() => {
     loadInitialData();
 
@@ -104,9 +110,10 @@ export default function NodeDetailScreen() {
       if (newEvent.node === nodeNumber) {
         console.log(`🔥 New event for Node ${nodeNumber}:`, newEvent);
         setLatestEvent(newEvent);
-        loadHistory(currentPage);
+        // Use the ref so we always reload the currently viewed page
+        loadHistory(currentPageRef.current);
       }
-    });
+    }, `node_${nodeNumber}`);
 
     return () => {
       subscription.unsubscribe();
