@@ -3,7 +3,6 @@ import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Image,
   Modal,
   RefreshControl,
   ScrollView,
@@ -224,10 +223,9 @@ export default function NodesScreen() {
           style={styles.accountButton}
           onPress={() => router.push('/account')}
         >
-          <Image
-            source={{ uri: 'https://via.placeholder.com/50' }}
-            style={styles.accountImage}
-          />
+          <View style={styles.accountEmojiContainer}>
+            <Text style={styles.accountEmoji}>👤</Text>
+          </View>
           <Text style={styles.accountText}>Account</Text>
         </TouchableOpacity>
       </View>
@@ -519,12 +517,17 @@ const styles = StyleSheet.create({
   accountButton: {
     alignItems: 'center',
   },
-  accountImage: {
+  accountEmojiContainer: {
     width: 48,
     height: 48,
     borderRadius: 24,
     backgroundColor: '#E5E7EB',
     marginBottom: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  accountEmoji: {
+    fontSize: 28,
   },
   accountText: {
     fontSize: 11,

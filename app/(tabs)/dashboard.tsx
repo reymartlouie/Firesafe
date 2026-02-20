@@ -457,8 +457,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    paddingTop: 60,
-    paddingBottom: 16,
+    paddingTop: 80,
+    paddingBottom: 20,
     backgroundColor: '#FFFFFF',
   },
   headerTitle: {

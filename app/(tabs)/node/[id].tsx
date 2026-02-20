@@ -15,6 +15,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import fireEventsService, { FireEvent } from '../../../services/fireEventsService';
+import nodesService, { Node } from '../../../services/nodesService';
 
 /**
  * Format timestamp for display
@@ -88,6 +89,7 @@ export default function NodeDetailScreen() {
   const iconSize    = Math.min(Math.round(width * 0.043),  20);
   const iconGap     = Math.min(Math.round(width * 0.064),  28);
 
+  const [nodeData, setNodeData] = useState<Node | null>(null);
   const [latestEvent, setLatestEvent] = useState<FireEvent | null>(null);
   const [historyEvents, setHistoryEvents] = useState<FireEvent[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -134,6 +136,7 @@ export default function NodeDetailScreen() {
     setLoading(true);
     try {
       await Promise.all([
+        loadNodeData(),
         loadLatestEvent(),
         loadHistory(1),
       ]);
@@ -153,9 +156,14 @@ export default function NodeDetailScreen() {
     setRefreshing(false);
   };
 
+  const loadNodeData = async () => {
+    const data = await nodesService.getNodeByNumber(nodeNumber);
+    setNodeData(data);
+  };
+
   /**
    * Load the most recent event for this specific node
-   * 
+   *
    * Non-Technical: Gets the newest sensor reading from this node only
    * Technical: Fetches all events for this node and takes the first one
    */
@@ -265,8 +273,13 @@ export default function NodeDetailScreen() {
         <View>
           <Text style={[styles.headerTitle, { fontSize: titleFont }]}>Node {nodeNumber}</Text>
           <Text style={[styles.headerSubtitle, { fontSize: bodyFont }]}>
-            Early alerts. Safer communities.
+            {nodeData?.location_name ?? 'Unknown Location'}
           </Text>
+          {nodeData?.latitude != null && nodeData?.longitude != null && (
+            <Text style={[styles.headerCoords, { fontSize: smallFont }]}>
+              {nodeData.latitude}, {nodeData.longitude}
+            </Text>
+          )}
         </View>
 
         <TouchableOpacity
@@ -478,6 +491,11 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     color: '#000000',
     fontWeight: '400',
+  },
+  headerCoords: {
+    color: '#6B7280',
+    fontWeight: '400',
+    marginTop: 2,
   },
   backButton: {
     padding: 10,
