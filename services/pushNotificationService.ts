@@ -78,13 +78,10 @@ const pushNotificationService = {
         throw new Error('User not authenticated');
       }
 
-      // Upsert: insert or update on conflict with the unique expo_push_token constraint
-      const { error: saveError } = await supabase
-        .from('push_tokens')
-        .upsert(
-          { user_id: user.id, expo_push_token: expoPushToken },
-          { onConflict: 'expo_push_token' }
-        );
+      // Use RPC to bypass RLS cross-user row visibility issue on upsert
+      const { error: saveError } = await supabase.rpc('upsert_push_token', {
+        p_expo_push_token: expoPushToken,
+      });
 
       if (saveError) {
         throw saveError;
