@@ -16,6 +16,10 @@ import {
 } from 'react-native';
 import fireEventsService, { FireEvent } from '../../../services/fireEventsService';
 import nodesService, { Node } from '../../../services/nodesService';
+import { useTheme } from '../../../contexts/ThemeContext';
+
+const light = { bg: '#FFFFFF', card: '#F3F4F6', border: '#E5E7EB', chip: '#E5E7EB', textPrimary: '#111827', textSecondary: '#6B7280' };
+const dark  = { bg: '#191919', card: '#202020', border: '#2A2A2A', chip: '#262626', textPrimary: '#E6E6E5', textSecondary: '#9B9A97' };
 
 /**
  * Format timestamp for display
@@ -71,6 +75,8 @@ const formatEventTime = (timestamp: string, includeDate: boolean = false) => {
 };
 
 export default function NodeDetailScreen() {
+  const { isDark } = useTheme();
+  const c = isDark ? dark : light;
   const { id } = useLocalSearchParams<{ id: string }>();
   const nodeNumber = parseInt(id || '1');
 
@@ -259,7 +265,7 @@ export default function NodeDetailScreen() {
 
   if (loading) {
     return (
-      <View style={[styles.container, styles.centerContent]}>
+      <View style={[styles.container, styles.centerContent, { backgroundColor: c.bg }]}>
         <ActivityIndicator size="large" color="#EA580C" />
         <Text style={styles.loadingText}>Loading node data...</Text>
       </View>
@@ -267,31 +273,31 @@ export default function NodeDetailScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: c.bg }]}>
       {/* Header */}
-      <View style={[styles.header, { paddingHorizontal: hPad }]}>
+      <View style={[styles.header, { paddingHorizontal: hPad, backgroundColor: c.bg }]}>
         <View>
-          <Text style={[styles.headerTitle, { fontSize: titleFont }]}>Node {nodeNumber}</Text>
-          <Text style={[styles.headerSubtitle, { fontSize: bodyFont }]}>
+          <Text style={[styles.headerTitle, { fontSize: titleFont, color: c.textPrimary }]}>Node {nodeNumber}</Text>
+          <Text style={[styles.headerSubtitle, { fontSize: bodyFont, color: c.textSecondary }]}>
             {nodeData?.location_name ?? 'Unknown Location'}
           </Text>
           {nodeData?.latitude != null && (
-            <Text style={[styles.headerCoords, { fontSize: smallFont }]}>
+            <Text style={[styles.headerCoords, { fontSize: smallFont, color: c.textSecondary }]}>
               Latitude: {nodeData.latitude}
             </Text>
           )}
           {nodeData?.longitude != null && (
-            <Text style={[styles.headerCoords, { fontSize: smallFont }]}>
+            <Text style={[styles.headerCoords, { fontSize: smallFont, color: c.textSecondary }]}>
               Longitude: {nodeData.longitude}
             </Text>
           )}
         </View>
 
         <TouchableOpacity
-          style={styles.backButton}
+          style={[styles.backButton, { backgroundColor: c.chip }]}
           onPress={() => router.push('/(tabs)/nodes')}
         >
-          <Ionicons name="arrow-back" size={22} color="#1F2937" />
+          <Ionicons name="arrow-back" size={22} color={c.textPrimary} />
         </TouchableOpacity>
       </View>
 
@@ -309,7 +315,7 @@ export default function NodeDetailScreen() {
       >
         {/* Latest Status */}
         <View style={[styles.section, { paddingHorizontal: hPad }]}>
-          <Text style={[styles.sectionTitle, { fontSize: sectionFont }]}>Latest Status</Text>
+          <Text style={[styles.sectionTitle, { fontSize: sectionFont, color: c.textPrimary }]}>Latest Status</Text>
 
           {latestEvent ? (
             <View
@@ -360,7 +366,7 @@ export default function NodeDetailScreen() {
               </View>
             </View>
           ) : (
-            <View style={[styles.statusCard, { padding: hPad, paddingVertical: cardPadV }]}>
+            <View style={[styles.statusCard, { padding: hPad, paddingVertical: cardPadV, backgroundColor: c.card, borderColor: c.border }]}>
               <Text style={[styles.noDataText, { fontSize: cellFont }]}>
                 No events recorded for Node {nodeNumber}
               </Text>
@@ -370,9 +376,9 @@ export default function NodeDetailScreen() {
 
         {/* Node History */}
         <View style={[styles.section, { paddingHorizontal: hPad }]}>
-          <Text style={[styles.sectionTitle, { fontSize: sectionFont }]}>Node History</Text>
+          <Text style={[styles.sectionTitle, { fontSize: sectionFont, color: c.textPrimary }]}>Node History</Text>
 
-          <View style={[styles.historyCard, { padding: histPad }]}>
+          <View style={[styles.historyCard, { padding: histPad, backgroundColor: c.card, borderColor: c.border }]}>
             <View style={styles.historyHeader}>
               <Text style={[styles.historyPage, { fontSize: smallFont }]}>
                 Page {currentPage}/{totalPages || 1}
@@ -382,17 +388,17 @@ export default function NodeDetailScreen() {
             {historyEvents.length > 0 ? (
               <>
                 <View style={styles.historyTable}>
-                  <View style={styles.tableHeader}>
-                    <Text style={[styles.tableHeaderText, styles.colRisk, { fontSize: hdrFont }]}>
+                  <View style={[styles.tableHeader, { borderBottomColor: c.border }]}>
+                    <Text style={[styles.tableHeaderText, styles.colRisk, { fontSize: hdrFont, color: c.textPrimary }]}>
                       Risk
                     </Text>
-                    <Text style={[styles.tableHeaderText, styles.colDate, { fontSize: hdrFont }]}>
+                    <Text style={[styles.tableHeaderText, styles.colDate, { fontSize: hdrFont, color: c.textPrimary }]}>
                       Date | Time
                     </Text>
                   </View>
 
                   {historyEvents.map((event) => (
-                    <View key={event.id} style={[styles.tableRow, { paddingVertical: rowPadV }]}>
+                    <View key={event.id} style={[styles.tableRow, { paddingVertical: rowPadV, borderBottomColor: c.border }]}>
                       <View style={styles.colRisk}>
                         <View style={[styles.riskBadge, getRiskBadgeColors(event.risk)]}>
                           <Text style={[styles.tableCell, { color: getRiskColor(event.risk), fontSize: cellFont }]}>
@@ -400,7 +406,7 @@ export default function NodeDetailScreen() {
                           </Text>
                         </View>
                       </View>
-                      <Text style={[styles.tableCell, styles.colDate, { fontSize: cellFont }]}>
+                      <Text style={[styles.tableCell, styles.colDate, { fontSize: cellFont, color: c.textPrimary }]}>
                         {formatEventTime(event.event_timestamp, true)}
                       </Text>
                     </View>

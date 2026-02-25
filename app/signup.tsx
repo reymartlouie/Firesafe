@@ -1,6 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import {
   ActivityIndicator,
@@ -17,8 +16,32 @@ import CustomModalAlert from './CustomModalAlert';
 import authService from '../services/authService';
 import pushNotificationService from '../services/pushNotificationService';
 import { supabase } from '../lib/supabaseClient';
+import { useTheme } from '../contexts/ThemeContext';
+
+const light = {
+  bg: '#F5F5F5',
+  card: '#FFFFFF',
+  border: '#E0E0E0',
+  textPrimary: '#272727',
+  textSecondary: '#757575',
+  placeholder: '#999999',
+  chipBg: 'rgba(255,255,255,0.6)',
+};
+
+const dark = {
+  bg: '#191919',
+  card: '#202020',
+  border: '#2A2A2A',
+  textPrimary: '#E6E6E5',
+  textSecondary: '#9B9A97',
+  placeholder: '#6B6B6B',
+  chipBg: '#262626',
+};
 
 export default function SignUpScreen() {
+  const { isDark } = useTheme();
+  const c = isDark ? dark : light;
+
   const [username, setUsername] = useState('');
   const [contactNumber, setContactNumber] = useState('');
   const [password, setPassword] = useState('');
@@ -29,7 +52,6 @@ export default function SignUpScreen() {
   const [modalMessage, setModalMessage] = useState('');
 
   const handleSignup = async () => {
-    // Validation
     if (!username || !contactNumber || !password || !confirmPassword) {
       setModalMessage('Please fill in all fields.');
       setModalVisible(true);
@@ -51,7 +73,6 @@ export default function SignUpScreen() {
     setIsLoading(true);
 
     try {
-      // Check if username already exists
       const { data: existingUser, error: checkError } = await supabase
         .from('profiles')
         .select('username')
@@ -67,10 +88,8 @@ export default function SignUpScreen() {
         return;
       }
 
-      // Signup if user doesn't exist
       await authService.signup(username, contactNumber, password);
 
-      // Register push token (signup auto-logs in the user)
       const expoPushToken = await pushNotificationService.registerForPushNotifications();
       if (expoPushToken) {
         await pushNotificationService.savePushToken(expoPushToken);
@@ -79,16 +98,14 @@ export default function SignUpScreen() {
       setModalMessage('Account successfully registered!');
       setModalVisible(true);
 
-      // Redirect to signin after signup for better UX
       setTimeout(() => {
         setModalVisible(false);
         router.replace('/signin');
       }, 2000);
-      
+
     } catch (error: any) {
       let errorMessage = error.message || 'Signup failed. Please try again.';
 
-      // Check for duplicate contact number error from Supabase
       if (
         errorMessage.includes('duplicate key value') &&
         errorMessage.includes('profiles_contact_number_key')
@@ -105,9 +122,6 @@ export default function SignUpScreen() {
 
   return (
     <>
-      <StatusBar style="dark" />
-
-      {/* Custom Modal Alert */}
       <CustomModalAlert
         visible={modalVisible}
         title="Notice"
@@ -116,7 +130,7 @@ export default function SignUpScreen() {
       />
 
       <KeyboardAvoidingView
-        style={styles.container}
+        style={[styles.container, { backgroundColor: c.bg }]}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView
@@ -126,24 +140,27 @@ export default function SignUpScreen() {
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.headerContainer}>
-              <Text style={styles.title}>Sign Up and Stay Protected</Text>
-              <Text style={styles.subtitle}>
+              <Text style={[styles.title, { color: c.textPrimary }]}>Sign Up and Stay Protected</Text>
+              <Text style={[styles.subtitle, { color: c.textSecondary }]}>
                 Get real-time fire alerts and help keep your community safe.
               </Text>
             </View>
 
-            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-              <Ionicons name="arrow-back" size={24} color="#1F2937" />
+            <TouchableOpacity
+              onPress={() => router.back()}
+              style={[styles.backButton, { backgroundColor: c.chipBg }]}
+            >
+              <Ionicons name="arrow-back" size={24} color={c.textPrimary} />
             </TouchableOpacity>
           </View>
 
           {/* Form */}
           <View style={styles.formContainer}>
-            <Text style={styles.label}>Username</Text>
+            <Text style={[styles.label, { color: c.textPrimary }]}>Username</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: c.card, borderColor: c.border, color: c.textPrimary }]}
               placeholder="Enter your username"
-              placeholderTextColor="#999"
+              placeholderTextColor={c.placeholder}
               value={username}
               onChangeText={setUsername}
               autoCapitalize="none"
@@ -151,22 +168,22 @@ export default function SignUpScreen() {
               editable={!isLoading}
             />
 
-            <Text style={styles.label}>Contact Number</Text>
+            <Text style={[styles.label, { color: c.textPrimary }]}>Contact Number</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: c.card, borderColor: c.border, color: c.textPrimary }]}
               placeholder="Enter your contact number"
-              placeholderTextColor="#999"
+              placeholderTextColor={c.placeholder}
               value={contactNumber}
               onChangeText={setContactNumber}
               keyboardType="phone-pad"
               editable={!isLoading}
             />
 
-            <Text style={styles.label}>Password</Text>
+            <Text style={[styles.label, { color: c.textPrimary }]}>Password</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: c.card, borderColor: c.border, color: c.textPrimary }]}
               placeholder="Enter your password"
-              placeholderTextColor="#999"
+              placeholderTextColor={c.placeholder}
               value={password}
               onChangeText={setPassword}
               secureTextEntry
@@ -174,11 +191,11 @@ export default function SignUpScreen() {
               editable={!isLoading}
             />
 
-            <Text style={styles.label}>Confirm Password</Text>
+            <Text style={[styles.label, { color: c.textPrimary }]}>Confirm Password</Text>
             <TextInput
-              style={[styles.input, styles.lastInput]}
+              style={[styles.input, styles.lastInput, { backgroundColor: c.card, borderColor: c.border, color: c.textPrimary }]}
               placeholder="Confirm your password"
-              placeholderTextColor="#999"
+              placeholderTextColor={c.placeholder}
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               secureTextEntry
@@ -205,9 +222,8 @@ export default function SignUpScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F5F5F5' },
+  container: { flex: 1 },
   scrollContent: { flexGrow: 1, padding: 24, paddingTop: 80 },
-
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -221,38 +237,30 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#272727',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 15,
-    color: '#757575',
   },
   backButton: {
     padding: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
     borderRadius: 40,
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
   },
-
   formContainer: { width: '100%' },
   label: {
     fontSize: 16,
-    color: '#272727',
     marginBottom: 8,
     fontWeight: '600',
   },
   input: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 20,
     padding: 16,
     fontSize: 16,
-    color: '#272727',
     borderWidth: 1,
-    borderColor: '#E0E0E0',
     marginBottom: 16,
   },
   lastInput: {

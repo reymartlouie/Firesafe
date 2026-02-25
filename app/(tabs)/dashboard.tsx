@@ -16,6 +16,10 @@ import {
 } from 'react-native';
 import authService from '../../services/authService';
 import fireEventsService, { FireEvent } from '../../services/fireEventsService';
+import { useTheme } from '../../contexts/ThemeContext';
+
+const light = { bg: '#FFFFFF', card: '#F3F4F6', border: '#E5E7EB', chip: '#E5E7EB', textPrimary: '#111827', textSecondary: '#6B7280' };
+const dark  = { bg: '#191919', card: '#202020', border: '#2A2A2A', chip: '#262626', textPrimary: '#E6E6E5', textSecondary: '#9B9A97' };
 
 /**
  * Format timestamp for display
@@ -78,6 +82,8 @@ const formatEventTime = (timestamp: string, includeDate: boolean = false) => {
 };
 
 export default function DashboardScreen() {
+  const { isDark } = useTheme();
+  const c = isDark ? dark : light;
   const { width } = useWindowDimensions();
   const hPad        = Math.min(Math.round(width * 0.07),   48);
   const cardPadV    = Math.min(Math.round(width * 0.064),  40);
@@ -263,7 +269,7 @@ export default function DashboardScreen() {
 
   if (loading) {
     return (
-      <View style={[styles.container, styles.centerContent]}>
+      <View style={[styles.container, styles.centerContent, { backgroundColor: c.bg }]}>
         <ActivityIndicator size="large" color="#EA580C" />
         <Text style={styles.loadingText}>Loading dashboard...</Text>
       </View>
@@ -271,12 +277,12 @@ export default function DashboardScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: c.bg }]}>
       {/* Header */}
-      <View style={[styles.header, { paddingHorizontal: hPad }]}>
+      <View style={[styles.header, { paddingHorizontal: hPad, backgroundColor: c.bg }]}>
         <View>
-          <Text style={[styles.headerTitle, { fontSize: titleFont }]}>Dashboard</Text>
-          <Text style={[styles.headerSubtitle, { fontSize: bodyFont }]}>
+          <Text style={[styles.headerTitle, { fontSize: titleFont, color: c.textPrimary }]}>Dashboard</Text>
+          <Text style={[styles.headerSubtitle, { fontSize: bodyFont, color: c.textSecondary }]}>
             Welcome back, {user?.username || 'User'}!
           </Text>
         </View>
@@ -284,10 +290,10 @@ export default function DashboardScreen() {
           style={styles.accountButton}
           onPress={() => router.push('/account')}
         >
-          <View style={[styles.accountEmojiContainer, { width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 }]}>
+          <View style={[styles.accountEmojiContainer, { width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2, backgroundColor: c.chip }]}>
             <Text style={[styles.accountEmoji, { fontSize: Math.round(avatarSize * 0.58) }]}>👤</Text>
           </View>
-          <Text style={[styles.accountText, { fontSize: smallFont }]}>Account</Text>
+          <Text style={[styles.accountText, { fontSize: smallFont, color: c.textPrimary }]}>Account</Text>
         </TouchableOpacity>
       </View>
 
@@ -305,7 +311,7 @@ export default function DashboardScreen() {
       >
         {/* Latest Status Card */}
         <View style={[styles.section, { paddingHorizontal: hPad }]}>
-          <Text style={[styles.sectionTitle, { fontSize: sectionFont }]}>Latest Status</Text>
+          <Text style={[styles.sectionTitle, { fontSize: sectionFont, color: c.textPrimary }]}>Latest Status</Text>
 
           {latestEvent ? (
             <View style={[styles.statusCard, getRiskCardColors(latestEvent.risk), { padding: hPad, paddingVertical: cardPadV }]}>
@@ -346,7 +352,7 @@ export default function DashboardScreen() {
               </View>
             </View>
           ) : (
-            <View style={[styles.statusCard, { padding: hPad, paddingVertical: cardPadV }]}>
+            <View style={[styles.statusCard, { padding: hPad, paddingVertical: cardPadV, backgroundColor: c.card, borderColor: c.border }]}>
               <Text style={[styles.noDataText, { fontSize: cellFont }]}>No fire events recorded yet</Text>
             </View>
           )}
@@ -354,25 +360,25 @@ export default function DashboardScreen() {
 
         {/* History Section */}
         <View style={[styles.section, { paddingHorizontal: hPad }]}>
-          <Text style={[styles.sectionTitle, { fontSize: sectionFont }]}>History</Text>
-          <View style={[styles.historyCard, { padding: histPad }]}>
+          <Text style={[styles.sectionTitle, { fontSize: sectionFont, color: c.textPrimary }]}>History</Text>
+          <View style={[styles.historyCard, { padding: histPad, backgroundColor: c.card, borderColor: c.border }]}>
             <View style={styles.historyHeader}>
               <Text style={[styles.historyPage, { fontSize: smallFont }]}>
                 Page {currentPage}/{totalPages || 1}
               </Text>
             </View>
-            
+
             {historyEvents.length > 0 ? (
               <>
                 <View style={styles.historyTable}>
-                  <View style={styles.tableHeader}>
-                    <Text style={[styles.tableHeaderText, styles.colRisk, { fontSize: hdrFont }]}>Risk</Text>
-                    <Text style={[styles.tableHeaderText, styles.colDate, { fontSize: hdrFont }]}>Date | Time</Text>
-                    <Text style={[styles.tableHeaderText, styles.colNode, { fontSize: hdrFont }]}>Node</Text>
+                  <View style={[styles.tableHeader, { borderBottomColor: c.border }]}>
+                    <Text style={[styles.tableHeaderText, styles.colRisk, { fontSize: hdrFont, color: c.textPrimary }]}>Risk</Text>
+                    <Text style={[styles.tableHeaderText, styles.colDate, { fontSize: hdrFont, color: c.textPrimary }]}>Date | Time</Text>
+                    <Text style={[styles.tableHeaderText, styles.colNode, { fontSize: hdrFont, color: c.textPrimary }]}>Node</Text>
                   </View>
 
                   {historyEvents.map((event) => (
-                    <View key={event.id} style={[styles.tableRow, { paddingVertical: rowPadV }]}>
+                    <View key={event.id} style={[styles.tableRow, { paddingVertical: rowPadV, borderBottomColor: c.border }]}>
                       <View style={styles.colRisk}>
                         <View style={[styles.riskBadge, getRiskBadgeColors(event.risk)]}>
                           <Text style={[styles.tableCell, { color: getRiskColor(event.risk), fontSize: cellFont }]}>
@@ -380,10 +386,10 @@ export default function DashboardScreen() {
                           </Text>
                         </View>
                       </View>
-                      <Text style={[styles.tableCell, styles.colDate, { fontSize: cellFont }]}>
+                      <Text style={[styles.tableCell, styles.colDate, { fontSize: cellFont, color: c.textPrimary }]}>
                         {formatEventTime(event.event_timestamp, true)}
                       </Text>
-                      <Text style={[styles.tableCell, styles.colNode, { fontSize: cellFont }]}>{event.node}</Text>
+                      <Text style={[styles.tableCell, styles.colNode, { fontSize: cellFont, color: c.textPrimary }]}>{event.node}</Text>
                     </View>
                   ))}
                 </View>

@@ -1,13 +1,29 @@
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import authService from '../../services/authService';
 import pushNotificationService from '../../services/pushNotificationService';
 import CustomModalAlert from '../../app/CustomModalAlert';
+import { useTheme } from '../../contexts/ThemeContext';
 
 export default function AccountScreen() {
+  const { isDark, toggleTheme } = useTheme();
+  const c = isDark ? dark : light;
+
   const [user, setUser] = useState<any>(null);
+  const [avatarUri, setAvatarUri] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [modalMessage, setModalMessage] = useState('');
 
@@ -20,6 +36,7 @@ export default function AccountScreen() {
       const userData = await authService.getUser();
       if (!userData) throw new Error('No user data found');
       setUser(userData);
+      if (userData.avatar_url) setAvatarUri(userData.avatar_url);
     } catch (error) {
       console.error('Failed to load user:', error);
       setModalMessage('Session expired. Please log in again.');
@@ -27,17 +44,55 @@ export default function AccountScreen() {
     }
   };
 
+  const handlePickAvatar = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      setModalMessage('Photo library access is required to change your profile picture.');
+      setModalVisible(true);
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (result.canceled || !result.assets[0]) return;
+
+    const uri = result.assets[0].uri;
+    setUploading(true);
+    try {
+      const url = await authService.updateAvatar(user.id, uri);
+      setAvatarUri(url);
+    } catch (error) {
+      console.error('Avatar upload failed:', error);
+      setModalMessage('Failed to upload profile picture. Please try again.');
+      setModalVisible(true);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleLogout = async () => {
+    // Best-effort token removal — always proceed to logout regardless of outcome
     try {
       const storedToken = await pushNotificationService.getStoredPushToken();
       if (storedToken) {
-        await pushNotificationService.removePushToken(storedToken);
+        const removed = await pushNotificationService.removePushToken(storedToken);
+        if (!removed) {
+          console.warn('Push token removal from DB failed — proceeding with logout anyway');
+        }
       }
+    } catch (error) {
+      console.error('Unexpected error during push token cleanup:', error);
+    }
 
+    try {
       await authService.logout();
       setModalMessage('You have been logged out successfully.');
       setModalVisible(true);
-
       setTimeout(() => router.replace('/'), 1200);
     } catch (error) {
       console.error('Logout failed:', error);
@@ -48,14 +103,14 @@ export default function AccountScreen() {
 
   if (!user) {
     return (
-      <View style={styles.container}>
-        <Text>Loading...</Text>
+      <View style={[styles.container, { backgroundColor: c.bg }]}>
+        <Text style={{ color: c.textPrimary }}>Loading...</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: c.bg }]}>
       <CustomModalAlert
         visible={modalVisible}
         title="Notice"
@@ -64,13 +119,13 @@ export default function AccountScreen() {
       />
 
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: c.bg }]}>
         <View>
-          <Text style={styles.headerTitle}>Account</Text>
-          <Text style={styles.headerSubtitle}>Your profile & settings</Text>
+          <Text style={[styles.headerTitle, { color: c.textPrimary }]}>Account</Text>
+          <Text style={[styles.headerSubtitle, { color: c.textSecondary }]}>Your profile & settings</Text>
         </View>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={22} color="#1F2937" />
+        <TouchableOpacity style={[styles.backButton, { backgroundColor: c.chip }]} onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={22} color={c.textPrimary} />
         </TouchableOpacity>
       </View>
 
@@ -79,27 +134,54 @@ export default function AccountScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Profile Card */}
-        <View style={styles.profileCard}>
-          <View style={styles.avatarSquircle}>
-            <Text style={styles.avatarEmoji}>👤</Text>
-          </View>
-          <View style={styles.profileInfo}>
-            <Text style={styles.username}>{user?.username || 'User'}</Text>
-            <Text style={styles.contact}>{user?.contact_number || '—'}</Text>
+        {/* Profile Card — avatar + username */}
+        <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
+          <TouchableOpacity style={styles.avatarWrapper} onPress={handlePickAvatar} disabled={uploading}>
+            {avatarUri ? (
+              <Image source={{ uri: avatarUri }} style={styles.avatarImage} contentFit="cover" />
+            ) : (
+              <View style={[styles.avatarPlaceholder, { backgroundColor: c.chip }]}>
+                <Ionicons name="person" size={40} color={c.textSecondary} />
+              </View>
+            )}
+            <View style={[styles.editBadge, { backgroundColor: c.bg, borderColor: c.border }]}>
+              {uploading
+                ? <ActivityIndicator size={12} color={c.textSecondary} />
+                : <Ionicons name="camera" size={12} color={c.textSecondary} />
+              }
+            </View>
+          </TouchableOpacity>
+          <Text style={[styles.username, { color: c.textPrimary }]}>{user?.username || 'User'}</Text>
+        </View>
+
+        {/* Contact Card */}
+        <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
+          <View style={styles.infoRow}>
+            <View style={[styles.iconBox, { backgroundColor: c.chip }]}>
+              <Ionicons name="call-outline" size={18} color={c.textSecondary} />
+            </View>
+            <View style={styles.infoText}>
+              <Text style={[styles.infoLabel, { color: c.textSecondary }]}>Contact Number</Text>
+              <Text style={[styles.infoValue, { color: c.textPrimary }]}>{user?.contact_number || '—'}</Text>
+            </View>
           </View>
         </View>
 
         {/* Settings Card */}
-        <View style={styles.settingsCard}>
+        <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
           <View style={styles.settingsRow}>
             <View style={styles.settingsLabelGroup}>
-              <Text style={styles.settingsLabel}>Dark Mode</Text>
-              <Text style={styles.settingsHint}>Coming soon</Text>
+              <View style={[styles.iconBox, { backgroundColor: c.chip }]}>
+                <Ionicons name="moon-outline" size={18} color={c.textSecondary} />
+              </View>
+              <Text style={[styles.settingsLabel, { color: c.textPrimary }]}>Dark Mode</Text>
             </View>
-            <View style={styles.darkModeSquircle}>
-              <Ionicons name="moon" size={20} color="#6B7280" />
-            </View>
+            <Switch
+              value={isDark}
+              onValueChange={toggleTheme}
+              trackColor={{ false: '#D1D5DB', true: '#374151' }}
+              thumbColor={isDark ? '#F9FAFB' : '#FFFFFF'}
+            />
           </View>
         </View>
 
@@ -112,13 +194,30 @@ export default function AccountScreen() {
   );
 }
 
+const light = {
+  bg: '#FFFFFF',
+  card: '#F3F4F6',
+  border: '#E5E7EB',
+  chip: '#E5E7EB',
+  textPrimary: '#111827',
+  textSecondary: '#6B7280',
+};
+
+const dark = {
+  bg: '#191919',
+  card: '#202020',
+  border: '#2A2A2A',
+  chip: '#262626',
+  textPrimary: '#E6E6E5',
+  textSecondary: '#9B9A97',
+};
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
 
-  // Header — same layout as node/[id].tsx
+  // Header
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -126,23 +225,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 80,
     paddingBottom: 20,
-    backgroundColor: '#FFFFFF',
   },
   headerTitle: {
     fontSize: 36,
     fontWeight: '700',
-    color: '#000000',
     marginBottom: 6,
   },
   headerSubtitle: {
     fontSize: 15,
-    color: '#000000',
     fontWeight: '400',
   },
   backButton: {
     padding: 10,
     borderRadius: 999,
-    backgroundColor: '#F3F4F6',
   },
 
   scrollView: {
@@ -155,76 +250,88 @@ const styles = StyleSheet.create({
     gap: 16,
   },
 
-  // Profile card
-  profileCard: {
-    backgroundColor: '#F3F4F6',
+  // Shared card
+  card: {
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
     padding: 24,
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 20,
   },
-  avatarSquircle: {
-    width: 88,
-    height: 88,
-    borderRadius: 28,
-    backgroundColor: '#E5E7EB',
+
+  // Profile card
+  avatarWrapper: {
+    position: 'relative',
+    marginBottom: 14,
+  },
+  avatarImage: {
+    width: 96,
+    height: 96,
+    borderRadius: 30,
+  },
+  avatarPlaceholder: {
+    width: 96,
+    height: 96,
+    borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  avatarEmoji: {
-    fontSize: 48,
-  },
-  profileInfo: {
-    flex: 1,
-    gap: 6,
+  editBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 26,
+    height: 26,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   username: {
     fontSize: 22,
     fontWeight: '700',
-    color: '#111827',
   },
-  contact: {
-    fontSize: 15,
-    color: '#6B7280',
-    fontWeight: '400',
+
+  // Contact card
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    alignSelf: 'stretch',
+  },
+  iconBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  infoText: {
+    gap: 2,
+  },
+  infoLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  infoValue: {
+    fontSize: 16,
+    fontWeight: '600',
   },
 
   // Settings card
-  settingsCard: {
-    backgroundColor: '#F3F4F6',
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    paddingHorizontal: 24,
-    paddingVertical: 20,
-  },
   settingsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    alignSelf: 'stretch',
   },
   settingsLabelGroup: {
-    gap: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
   settingsLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#111827',
-  },
-  settingsHint: {
-    fontSize: 12,
-    color: '#9CA3AF',
-  },
-  darkModeSquircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: '#E5E7EB',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
 
   // Logout

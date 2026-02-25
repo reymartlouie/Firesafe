@@ -110,6 +110,8 @@ const pushNotificationService = {
 
   // Delete push token when user logs out
   removePushToken: async (expoPushToken: string): Promise<boolean> => {
+    let dbSuccess = false;
+
     try {
       const { data: deleteData, error, count: deleteCount } = await supabase
         .from('push_tokens')
@@ -120,16 +122,20 @@ const pushNotificationService = {
       if (error) throw error;
 
       console.log('Push token delete result:', { deleteData, deleteCount });
-
-      // Clear locally stored token
-      await SecureStore.deleteItemAsync(PUSH_TOKEN_KEY);
-
-      console.log('Push token removed successfully');
-      return true;
+      dbSuccess = true;
     } catch (error) {
-      console.error('Error removing push token:', error);
-      return false;
+      console.error('Error removing push token from DB:', error);
     }
+
+    // Always clear locally stored token regardless of DB result
+    try {
+      await SecureStore.deleteItemAsync(PUSH_TOKEN_KEY);
+      console.log('Push token removed from local storage');
+    } catch (error) {
+      console.error('Error clearing local push token:', error);
+    }
+
+    return dbSuccess;
   },
 
   // Setup notification listeners

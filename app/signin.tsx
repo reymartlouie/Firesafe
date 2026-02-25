@@ -11,13 +11,37 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Link, router } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
+import { Ionicons } from '@expo/vector-icons';
 import * as Network from 'expo-network';
 import authService from '../services/authService';
 import pushNotificationService from '../services/pushNotificationService';
 import CustomModalAlert from './CustomModalAlert';
+import { useTheme } from '../contexts/ThemeContext';
+
+const light = {
+  bg: '#F5F5F5',
+  card: '#FFFFFF',
+  border: '#E0E0E0',
+  textPrimary: '#2C2C2C',
+  textSecondary: '#757575',
+  placeholder: '#999999',
+  chipBg: '#EFEFEF',
+};
+
+const dark = {
+  bg: '#191919',
+  card: '#202020',
+  border: '#2A2A2A',
+  textPrimary: '#E6E6E5',
+  textSecondary: '#9B9A97',
+  placeholder: '#6B6B6B',
+  chipBg: '#262626',
+};
 
 export default function SignInScreen() {
+  const { isDark, toggleTheme } = useTheme();
+  const c = isDark ? dark : light;
+
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -40,7 +64,6 @@ export default function SignInScreen() {
     setIsLoading(true);
 
     try {
-      // Check if there's internet connection
       const networkState = await Network.getNetworkStateAsync();
       if (!networkState.isConnected) {
         showModal('Connection Error', 'You are offline. Please check your internet connection.');
@@ -48,14 +71,10 @@ export default function SignInScreen() {
         return;
       }
 
-      // Login user
       await authService.login(username, password);
-      
-      // Register for push notifications after successful login
+
       const expoPushToken = await pushNotificationService.registerForPushNotifications();
-      
       if (expoPushToken) {
-        // Save the push token to database
         await pushNotificationService.savePushToken(expoPushToken);
         console.log('Push notifications registered:', expoPushToken);
       } else {
@@ -76,9 +95,6 @@ export default function SignInScreen() {
 
   return (
     <>
-      <StatusBar style="dark" />
-
-      {/* Custom Modal Alert */}
       <CustomModalAlert
         visible={modalVisible}
         title={modalTitle}
@@ -87,32 +103,44 @@ export default function SignInScreen() {
       />
 
       <KeyboardAvoidingView
-        style={styles.container}
+        style={[styles.container, { backgroundColor: c.bg }]}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
+        {/* Dark mode toggle — top right */}
+        <TouchableOpacity
+          style={[styles.themeToggle, { backgroundColor: c.chipBg }]}
+          onPress={toggleTheme}
+        >
+          <Ionicons
+            name={isDark ? 'sunny-outline' : 'moon-outline'}
+            size={18}
+            color={c.textSecondary}
+          />
+        </TouchableOpacity>
+
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.logoContainer}>
-            <View style={styles.flameLogo}>
+            <View style={[styles.flameLogo, { backgroundColor: isDark ? '#2F2F2F' : '#FFE0E0' }]}>
               <Text style={styles.flameEmoji}>🔥</Text>
             </View>
-            <Text style={styles.appName}>FireSafe</Text>
+            <Text style={[styles.appName, { color: c.textPrimary }]}>FireSafe</Text>
           </View>
 
           <View style={styles.welcomeContainer}>
-            <Text style={styles.welcomeTitle}>Welcome Back!</Text>
-            <Text style={styles.welcomeSubtitle}>
+            <Text style={[styles.welcomeTitle, { color: c.textPrimary }]}>Welcome Back!</Text>
+            <Text style={[styles.welcomeSubtitle, { color: c.textSecondary }]}>
               Access your FireSafe account.
             </Text>
           </View>
 
           <View style={styles.formContainer}>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: c.card, borderColor: c.border, color: c.textPrimary }]}
               placeholder="Username"
-              placeholderTextColor="#999"
+              placeholderTextColor={c.placeholder}
               value={username}
               onChangeText={setUsername}
               autoCapitalize="none"
@@ -121,9 +149,9 @@ export default function SignInScreen() {
             />
 
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: c.card, borderColor: c.border, color: c.textPrimary }]}
               placeholder="Password"
-              placeholderTextColor="#999"
+              placeholderTextColor={c.placeholder}
               value={password}
               onChangeText={setPassword}
               secureTextEntry
@@ -135,7 +163,7 @@ export default function SignInScreen() {
               style={styles.forgotContainer}
               onPress={() => showModal('Coming Soon', 'Password reset feature coming soon.')}
             >
-              <Text style={styles.forgotText}>Forgot Password?</Text>
+              <Text style={[styles.forgotText, { color: c.textSecondary }]}>Forgot Password?</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -151,7 +179,7 @@ export default function SignInScreen() {
             </TouchableOpacity>
 
             <View style={styles.signUpContainer}>
-              <Text style={styles.signUpText}>Don't have an account? </Text>
+              <Text style={[styles.signUpText, { color: c.textSecondary }]}>Don't have an account? </Text>
               <Link href="/signup" asChild>
                 <TouchableOpacity>
                   <Text style={styles.signUpLink}>Sign up</Text>
@@ -166,37 +194,53 @@ export default function SignInScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F5F5F5' },
-  scrollContent: { flexGrow: 1, justifyContent: 'center', padding: 24 },
-  logoContainer: { alignItems: 'center', marginBottom: 40 },
+  container: {
+    flex: 1,
+  },
+  themeToggle: {
+    position: 'absolute',
+    top: 60,
+    right: 24,
+    zIndex: 10,
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    padding: 24,
+  },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 40,
+  },
   flameLogo: {
     width: 80,
     height: 80,
-    backgroundColor: '#FFE0E0',
     borderRadius: 40,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
   },
   flameEmoji: { fontSize: 48 },
-  appName: { fontSize: 42, fontWeight: '700', color: '#2C2C2C' },
+  appName: { fontSize: 42, fontWeight: '700' },
   welcomeContainer: { alignItems: 'center', marginBottom: 40 },
-  welcomeTitle: { fontSize: 28, fontWeight: '600', color: '#2C2C2C', marginBottom: 8 },
-  welcomeSubtitle: { fontSize: 15, color: '#757575' },
+  welcomeTitle: { fontSize: 28, fontWeight: '600', marginBottom: 8 },
+  welcomeSubtitle: { fontSize: 15 },
   formContainer: { width: '100%' },
   input: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 30,
     padding: 16,
     paddingHorizontal: 20,
     fontSize: 16,
-    color: '#2C2C2C',
     borderWidth: 1,
-    borderColor: '#E0E0E0',
     marginBottom: 16,
   },
   forgotContainer: { alignSelf: 'flex-start', marginBottom: 24 },
-  forgotText: { fontSize: 14, color: '#B0B0B0' },
+  forgotText: { fontSize: 14 },
   signInButton: {
     backgroundColor: '#2E7D32',
     borderRadius: 20,
@@ -211,6 +255,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  signUpText: { fontSize: 14, color: '#757575' },
+  signUpText: { fontSize: 14 },
   signUpLink: { fontSize: 14, color: '#2E7D32', fontWeight: '600' },
 });

@@ -3,10 +3,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { useEffect } from 'react';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { AdminProvider, useAdmin } from '../../contexts/AdminContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import authService from '../../services/authService';
 
 function TabLayoutInner() {
   const { setIsAdmin } = useAdmin();
+  const { isDark } = useTheme();
   const { width } = useWindowDimensions();
   const sidePad = Math.min(Math.round(width * 0.053), 40);
 
@@ -26,8 +28,8 @@ function TabLayoutInner() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#1F2937',
-        tabBarInactiveTintColor: '#9CA3AF',
+        tabBarActiveTintColor: isDark ? '#F9FAFB' : '#1F2937',
+        tabBarInactiveTintColor: isDark ? '#6B7280' : '#9CA3AF',
         tabBarStyle: {
           position: 'absolute',
           bottom: 24,
@@ -45,7 +47,7 @@ function TabLayoutInner() {
           elevation: 12,
         },
         tabBarBackground: () => (
-          <View style={[StyleSheet.absoluteFill, styles.tabBarBlur]} />
+          <View style={[StyleSheet.absoluteFill, isDark ? styles.tabBarBlurDark : styles.tabBarBlur]} />
         ),
         tabBarItemStyle: {
           paddingHorizontal: 24,
@@ -105,5 +107,12 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.82)',
     borderWidth: 0.5,
     borderColor: 'rgba(255, 255, 255, 0.6)',
+  },
+  tabBarBlurDark: {
+    borderRadius: 32,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(25, 25, 25, 0.95)',
+    borderWidth: 0.5,
+    borderColor: 'rgba(55, 55, 55, 0.8)',
   },
 });

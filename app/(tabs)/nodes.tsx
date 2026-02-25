@@ -14,10 +14,16 @@ import {
 } from 'react-native';
 import CustomModalAlert from '../CustomModalAlert';
 import { useAdmin } from '../../contexts/AdminContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import nodesService, { Node } from '../../services/nodesService';
+
+const light = { bg: '#FFFFFF', card: '#F3F4F6', border: '#E5E7EB', chip: '#E5E7EB', textPrimary: '#111827', textSecondary: '#6B7280' };
+const dark  = { bg: '#191919', card: '#202020', border: '#2A2A2A', chip: '#262626', textPrimary: '#E6E6E5', textSecondary: '#9B9A97' };
 
 export default function NodesScreen() {
   const { isAdmin } = useAdmin();
+  const { isDark } = useTheme();
+  const c = isDark ? dark : light;
   const [nodes, setNodes] = useState<Node[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -212,21 +218,21 @@ export default function NodesScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: c.bg }]}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: c.bg }]}>
         <View>
-          <Text style={styles.headerTitle}>Nodes</Text>
-          <Text style={styles.headerSubtitle}>Early alerts. Safer communities.</Text>
+          <Text style={[styles.headerTitle, { color: c.textPrimary }]}>Nodes</Text>
+          <Text style={[styles.headerSubtitle, { color: c.textSecondary }]}>Early alerts. Safer communities.</Text>
         </View>
         <TouchableOpacity
           style={styles.accountButton}
           onPress={() => router.push('/account')}
         >
-          <View style={styles.accountEmojiContainer}>
+          <View style={[styles.accountEmojiContainer, { backgroundColor: c.chip }]}>
             <Text style={styles.accountEmoji}>👤</Text>
           </View>
-          <Text style={styles.accountText}>Account</Text>
+          <Text style={[styles.accountText, { color: c.textPrimary }]}>Account</Text>
         </TouchableOpacity>
       </View>
 
@@ -273,12 +279,12 @@ export default function NodesScreen() {
           nodes.map((node) => (
             <TouchableOpacity
               key={node.node_number}
-              style={styles.nodeCard}
+              style={[styles.nodeCard, { backgroundColor: c.card, borderColor: c.border }]}
               onPress={() => router.push(`/node/${node.node_number}`)}
             >
               <View style={{ flex: 1 }}>
-                <Text style={styles.nodeTitle}>Node {node.node_number}</Text>
-                <Text style={styles.nodeSubtitle}>
+                <Text style={[styles.nodeTitle, { color: c.textPrimary }]}>Node {node.node_number}</Text>
+                <Text style={[styles.nodeSubtitle, { color: c.textSecondary }]}>
                   {node.location_name || 'No location set'}
                 </Text>
               </View>
@@ -293,7 +299,7 @@ export default function NodesScreen() {
                       }}
                       hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     >
-                      <Ionicons name="create-outline" size={22} color="#6B7280" />
+                      <Ionicons name="create-outline" size={22} color={c.textSecondary} />
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={styles.editButton}
@@ -307,16 +313,16 @@ export default function NodesScreen() {
                     </TouchableOpacity>
                   </>
                 )}
-                <Ionicons name="arrow-forward" size={24} color="#1F2937" />
+                <Ionicons name="arrow-forward" size={24} color={c.textPrimary} />
               </View>
             </TouchableOpacity>
           ))
         )}
         {/* Add Node Button - admin only, shown at the bottom */}
         {!loading && !error && isAdmin && (
-          <TouchableOpacity style={styles.addNodeCard} onPress={openAddModal}>
-            <Ionicons name="add-circle-outline" size={32} color="#6B7280" />
-            <Text style={styles.addNodeText}>Add New Node</Text>
+          <TouchableOpacity style={[styles.addNodeCard, { backgroundColor: c.bg, borderColor: c.border }]} onPress={openAddModal}>
+            <Ionicons name="add-circle-outline" size={32} color={c.textSecondary} />
+            <Text style={[styles.addNodeText, { color: c.textSecondary }]}>Add New Node</Text>
           </TouchableOpacity>
         )}
       </ScrollView>
