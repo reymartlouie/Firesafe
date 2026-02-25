@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
@@ -15,6 +16,7 @@ import {
 import CustomModalAlert from '../CustomModalAlert';
 import { useAdmin } from '../../contexts/AdminContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import authService from '../../services/authService';
 import nodesService, { Node } from '../../services/nodesService';
 
 const light = { bg: '#FFFFFF', card: '#F3F4F6', border: '#E5E7EB', chip: '#E5E7EB', textPrimary: '#111827', textSecondary: '#6B7280' };
@@ -24,6 +26,7 @@ export default function NodesScreen() {
   const { isAdmin } = useAdmin();
   const { isDark } = useTheme();
   const c = isDark ? dark : light;
+  const [user, setUser] = useState<any>(null);
   const [nodes, setNodes] = useState<Node[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -70,6 +73,7 @@ export default function NodesScreen() {
   }, []);
 
   useEffect(() => {
+    authService.getUser().then(setUser).catch(() => {});
     fetchNodes();
 
     const unsubscribe = nodesService.subscribeToNodes(() => {
@@ -230,7 +234,15 @@ export default function NodesScreen() {
           onPress={() => router.push('/account')}
         >
           <View style={[styles.accountEmojiContainer, { backgroundColor: c.chip }]}>
-            <Text style={styles.accountEmoji}>👤</Text>
+            {user?.avatar_url ? (
+              <Image
+                source={{ uri: user.avatar_url }}
+                style={styles.accountAvatarImage}
+                contentFit="cover"
+              />
+            ) : (
+              <Text style={styles.accountEmoji}>👤</Text>
+            )}
           </View>
           <Text style={[styles.accountText, { color: c.textPrimary }]}>Account</Text>
         </TouchableOpacity>
@@ -534,6 +546,11 @@ const styles = StyleSheet.create({
   },
   accountEmoji: {
     fontSize: 28,
+  },
+  accountAvatarImage: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
   },
   accountText: {
     fontSize: 11,

@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { FontAwesome6 } from '@expo/vector-icons';
 import { Entypo } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -291,7 +292,15 @@ export default function DashboardScreen() {
           onPress={() => router.push('/account')}
         >
           <View style={[styles.accountEmojiContainer, { width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2, backgroundColor: c.chip }]}>
-            <Text style={[styles.accountEmoji, { fontSize: Math.round(avatarSize * 0.58) }]}>👤</Text>
+            {user?.avatar_url ? (
+              <Image
+                source={{ uri: user.avatar_url }}
+                style={{ width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 }}
+                contentFit="cover"
+              />
+            ) : (
+              <Text style={[styles.accountEmoji, { fontSize: Math.round(avatarSize * 0.58) }]}>👤</Text>
+            )}
           </View>
           <Text style={[styles.accountText, { fontSize: smallFont, color: c.textPrimary }]}>Account</Text>
         </TouchableOpacity>
