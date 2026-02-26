@@ -3,11 +3,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { useEffect } from 'react';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { AdminProvider, useAdmin } from '../../contexts/AdminContext';
+import { AvatarProvider, useAvatar } from '../../contexts/AvatarContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import authService from '../../services/authService';
 
 function TabLayoutInner() {
   const { setIsAdmin } = useAdmin();
+  const { setAvatarUrl } = useAvatar();
   const { isDark } = useTheme();
   const { width } = useWindowDimensions();
   const sidePad = Math.min(Math.round(width * 0.053), 40);
@@ -17,12 +19,13 @@ function TabLayoutInner() {
       try {
         const user = await authService.getUser();
         setIsAdmin(user.is_admin === true);
+        setAvatarUrl(user.avatar_url ?? null);
       } catch {
         setIsAdmin(false);
       }
     };
     checkAdmin();
-  }, [setIsAdmin]);
+  }, [setIsAdmin, setAvatarUrl]);
 
   return (
     <Tabs
@@ -95,7 +98,9 @@ function TabLayoutInner() {
 export default function TabLayout() {
   return (
     <AdminProvider>
-      <TabLayoutInner />
+      <AvatarProvider>
+        <TabLayoutInner />
+      </AvatarProvider>
     </AdminProvider>
   );
 }

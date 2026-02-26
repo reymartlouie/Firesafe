@@ -3,8 +3,8 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { FontAwesome6 } from '@expo/vector-icons';
 import { Entypo } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { router } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import authService from '../../services/authService';
 import fireEventsService, { FireEvent } from '../../services/fireEventsService';
+import { useAvatar } from '../../contexts/AvatarContext';
 import { useTheme } from '../../contexts/ThemeContext';
 
 const light = { bg: '#FFFFFF', card: '#F3F4F6', border: '#E5E7EB', chip: '#E5E7EB', textPrimary: '#111827', textSecondary: '#6B7280' };
@@ -84,6 +85,7 @@ const formatEventTime = (timestamp: string, includeDate: boolean = false) => {
 
 export default function DashboardScreen() {
   const { isDark } = useTheme();
+  const { avatarUrl } = useAvatar();
   const c = isDark ? dark : light;
   const { width } = useWindowDimensions();
   const hPad        = Math.min(Math.round(width * 0.07),   48);
@@ -134,6 +136,13 @@ export default function DashboardScreen() {
   useEffect(() => {
     loadHistory(currentPage);
   }, [currentPage]);
+
+  // Re-fetch user on every focus so avatar updates from account screen are reflected
+  useFocusEffect(
+    useCallback(() => {
+      loadUser().catch((err) => console.warn('loadUser (focus):', err));
+    }, [])
+  );
 
   /**
    * Load all initial data (user and fire events)
@@ -292,11 +301,12 @@ export default function DashboardScreen() {
           onPress={() => router.push('/account')}
         >
           <View style={[styles.accountEmojiContainer, { width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2, backgroundColor: c.chip }]}>
-            {user?.avatar_url ? (
+            {avatarUrl ? (
               <Image
-                source={{ uri: user.avatar_url }}
+                source={{ uri: avatarUrl }}
                 style={{ width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 }}
                 contentFit="cover"
+                cachePolicy="none"
               />
             ) : (
               <Text style={[styles.accountEmoji, { fontSize: Math.round(avatarSize * 0.58) }]}>👤</Text>

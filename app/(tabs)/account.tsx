@@ -15,10 +15,12 @@ import * as ImagePicker from 'expo-image-picker';
 import authService from '../../services/authService';
 import pushNotificationService from '../../services/pushNotificationService';
 import CustomModalAlert from '../../app/CustomModalAlert';
+import { useAvatar } from '../../contexts/AvatarContext';
 import { useTheme } from '../../contexts/ThemeContext';
 
 export default function AccountScreen() {
   const { isDark, toggleTheme } = useTheme();
+  const { setAvatarUrl } = useAvatar();
   const c = isDark ? dark : light;
 
   const [user, setUser] = useState<any>(null);
@@ -36,7 +38,10 @@ export default function AccountScreen() {
       const userData = await authService.getUser();
       if (!userData) throw new Error('No user data found');
       setUser(userData);
-      if (userData.avatar_url) setAvatarUri(userData.avatar_url);
+      if (userData.avatar_url) {
+        setAvatarUri(userData.avatar_url);
+        setAvatarUrl(userData.avatar_url);
+      }
     } catch (error) {
       console.error('Failed to load user:', error);
       setModalMessage('Session expired. Please log in again.');
@@ -66,9 +71,10 @@ export default function AccountScreen() {
     try {
       const url = await authService.updateAvatar(user.id, uri);
       setAvatarUri(url);
-    } catch (error) {
+      setAvatarUrl(url);
+    } catch (error: any) {
       console.error('Avatar upload failed:', error);
-      setModalMessage('Failed to upload profile picture. Please try again.');
+      setModalMessage(error?.message ?? 'Failed to upload profile picture. Please try again.');
       setModalVisible(true);
     } finally {
       setUploading(false);
@@ -91,6 +97,7 @@ export default function AccountScreen() {
 
     try {
       await authService.logout();
+      setAvatarUrl(null);
       setModalMessage('You have been logged out successfully.');
       setModalVisible(true);
       setTimeout(() => router.replace('/'), 1200);
@@ -136,22 +143,28 @@ export default function AccountScreen() {
       >
         {/* Profile Card — avatar + username */}
         <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
-          <TouchableOpacity style={styles.avatarWrapper} onPress={handlePickAvatar} disabled={uploading}>
-            {avatarUri ? (
-              <Image source={{ uri: avatarUri }} style={styles.avatarImage} contentFit="cover" />
-            ) : (
-              <View style={[styles.avatarPlaceholder, { backgroundColor: c.chip }]}>
-                <Ionicons name="person" size={40} color={c.textSecondary} />
-              </View>
-            )}
-            <View style={[styles.editBadge, { backgroundColor: c.bg, borderColor: c.border }]}>
-              {uploading
-                ? <ActivityIndicator size={12} color={c.textSecondary} />
-                : <Ionicons name="camera" size={12} color={c.textSecondary} />
-              }
+          {avatarUri ? (
+            <Image source={{ uri: avatarUri }} style={styles.avatarImage} contentFit="cover" />
+          ) : (
+            <View style={[styles.avatarPlaceholder, { backgroundColor: c.chip }]}>
+              <Ionicons name="person" size={40} color={c.textSecondary} />
             </View>
-          </TouchableOpacity>
+          )}
           <Text style={[styles.username, { color: c.textPrimary }]}>{user?.username || 'User'}</Text>
+          <TouchableOpacity
+            style={[styles.changePhotoButton, { backgroundColor: c.chip }]}
+            onPress={handlePickAvatar}
+            disabled={uploading}
+          >
+            {uploading ? (
+              <ActivityIndicator size={14} color={c.textSecondary} />
+            ) : (
+              <>
+                <Ionicons name="camera-outline" size={14} color={c.textSecondary} />
+                <Text style={[styles.changePhotoText, { color: c.textSecondary }]}>Change Photo</Text>
+              </>
+            )}
+          </TouchableOpacity>
         </View>
 
         {/* Contact Card */}
@@ -259,14 +272,11 @@ const styles = StyleSheet.create({
   },
 
   // Profile card
-  avatarWrapper: {
-    position: 'relative',
-    marginBottom: 14,
-  },
   avatarImage: {
     width: 96,
     height: 96,
     borderRadius: 30,
+    marginBottom: 14,
   },
   avatarPlaceholder: {
     width: 96,
@@ -274,21 +284,24 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  editBadge: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 26,
-    height: 26,
-    borderRadius: 8,
-    borderWidth: 1.5,
-    justifyContent: 'center',
-    alignItems: 'center',
+    marginBottom: 14,
   },
   username: {
     fontSize: 22,
     fontWeight: '700',
+    marginBottom: 12,
+  },
+  changePhotoButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 20,
+  },
+  changePhotoText: {
+    fontSize: 13,
+    fontWeight: '500',
   },
 
   // Contact card

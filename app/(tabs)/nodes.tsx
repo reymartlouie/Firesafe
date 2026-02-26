@@ -15,8 +15,8 @@ import {
 } from 'react-native';
 import CustomModalAlert from '../CustomModalAlert';
 import { useAdmin } from '../../contexts/AdminContext';
+import { useAvatar } from '../../contexts/AvatarContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import authService from '../../services/authService';
 import nodesService, { Node } from '../../services/nodesService';
 
 const light = { bg: '#FFFFFF', card: '#F3F4F6', border: '#E5E7EB', chip: '#E5E7EB', textPrimary: '#111827', textSecondary: '#6B7280' };
@@ -24,9 +24,9 @@ const dark  = { bg: '#191919', card: '#202020', border: '#2A2A2A', chip: '#26262
 
 export default function NodesScreen() {
   const { isAdmin } = useAdmin();
+  const { avatarUrl } = useAvatar();
   const { isDark } = useTheme();
   const c = isDark ? dark : light;
-  const [user, setUser] = useState<any>(null);
   const [nodes, setNodes] = useState<Node[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -73,7 +73,6 @@ export default function NodesScreen() {
   }, []);
 
   useEffect(() => {
-    authService.getUser().then(setUser).catch(() => {});
     fetchNodes();
 
     const unsubscribe = nodesService.subscribeToNodes(() => {
@@ -234,11 +233,12 @@ export default function NodesScreen() {
           onPress={() => router.push('/account')}
         >
           <View style={[styles.accountEmojiContainer, { backgroundColor: c.chip }]}>
-            {user?.avatar_url ? (
+            {avatarUrl ? (
               <Image
-                source={{ uri: user.avatar_url }}
+                source={{ uri: avatarUrl }}
                 style={styles.accountAvatarImage}
                 contentFit="cover"
+                cachePolicy="none"
               />
             ) : (
               <Text style={styles.accountEmoji}>👤</Text>

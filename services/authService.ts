@@ -1,3 +1,5 @@
+import { readAsStringAsync, EncodingType } from 'expo-file-system/legacy';
+import { toByteArray } from 'base64-js';
 import { supabase } from '../lib/supabaseClient';
 
 const authService = {
@@ -69,29 +71,20 @@ const authService = {
 
   // Upload avatar image and save public URL to profile
   updateAvatar: async (userId: string, imageUri: string): Promise<string> => {
-    // Strip query params before extracting extension
     const rawExt = imageUri.split('?')[0].split('.').pop()?.toLowerCase() ?? 'jpg';
     const ext = ['jpg', 'jpeg', 'png', 'webp'].includes(rawExt) ? rawExt : 'jpg';
     const mimeType = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : `image/${ext}`;
-    const path = `${userId}/avatar.${ext}`;
 
-    // Delete any existing avatar files for this user (extension may differ)
-    const { data: existingFiles } = await supabase.storage
-      .from('avatars')
-      .list(userId);
+    // Fixed path — upsert always overwrites the same file, no need to delete first
+    const path = `${userId}/avatar`;
 
-    if (existingFiles && existingFiles.length > 0) {
-      const oldPaths = existingFiles.map((f) => `${userId}/${f.name}`);
-      await supabase.storage.from('avatars').remove(oldPaths);
-    }
-
-    // ArrayBuffer is more reliable than Blob in React Native
-    const response = await fetch(imageUri);
-    const arrayBuffer = await response.arrayBuffer();
+    // Read image as base64 using the stable legacy API, then convert to bytes
+    const base64 = await readAsStringAsync(imageUri, { encoding: EncodingType.Base64 });
+    const bytes = toByteArray(base64);
 
     const { error: uploadError } = await supabase.storage
       .from('avatars')
-      .upload(path, arrayBuffer, { contentType: mimeType });
+      .upload(path, bytes, { upsert: true, contentType: mimeType });
 
     if (uploadError) throw new Error(uploadError.message);
 
@@ -99,6 +92,8 @@ const authService = {
       .from('avatars')
       .getPublicUrl(path);
 
+    // Store the clean URL without a timestamp so getUser() always returns a stable value.
+    // The ?t= cache-bust is added at render time (cachePolicy="none" on expo-image).
     const avatarUrl = urlData.publicUrl;
 
     const { error: updateError } = await supabase
@@ -108,7 +103,8 @@ const authService = {
 
     if (updateError) throw new Error(updateError.message);
 
-    return avatarUrl;
+    // Return with a fresh timestamp so the account screen immediately shows the new photo
+    return `${avatarUrl}?t=${Date.now()}`;
   },
 };
 
