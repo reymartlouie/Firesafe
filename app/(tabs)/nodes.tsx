@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
@@ -15,7 +14,6 @@ import {
 } from 'react-native';
 import CustomModalAlert from '../CustomModalAlert';
 import { useAdmin } from '../../contexts/AdminContext';
-import { useAvatar } from '../../contexts/AvatarContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import nodesService, { Node } from '../../services/nodesService';
 
@@ -24,7 +22,6 @@ const dark  = { bg: '#191919', card: '#202020', border: '#2A2A2A', chip: '#26262
 
 export default function NodesScreen() {
   const { isAdmin } = useAdmin();
-  const { avatarUrl } = useAvatar();
   const { isDark } = useTheme();
   const c = isDark ? dark : light;
   const [nodes, setNodes] = useState<Node[]>([]);
@@ -233,16 +230,7 @@ export default function NodesScreen() {
           onPress={() => router.push('/account')}
         >
           <View style={[styles.accountEmojiContainer, { backgroundColor: c.chip }]}>
-            {avatarUrl ? (
-              <Image
-                source={{ uri: avatarUrl }}
-                style={styles.accountAvatarImage}
-                contentFit="cover"
-                cachePolicy="none"
-              />
-            ) : (
-              <Text style={styles.accountEmoji}>👤</Text>
-            )}
+            <Ionicons name="person" size={22} color={c.textSecondary} />
           </View>
           <Text style={[styles.accountText, { color: c.textPrimary }]}>Account</Text>
         </TouchableOpacity>

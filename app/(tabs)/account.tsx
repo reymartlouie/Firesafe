@@ -1,7 +1,6 @@
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   ScrollView,
   StyleSheet,
   Switch,
@@ -9,23 +8,17 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
 import authService from '../../services/authService';
 import pushNotificationService from '../../services/pushNotificationService';
 import CustomModalAlert from '../../app/CustomModalAlert';
-import { useAvatar } from '../../contexts/AvatarContext';
 import { useTheme } from '../../contexts/ThemeContext';
 
 export default function AccountScreen() {
   const { isDark, toggleTheme } = useTheme();
-  const { setAvatarUrl } = useAvatar();
   const c = isDark ? dark : light;
 
   const [user, setUser] = useState<any>(null);
-  const [avatarUri, setAvatarUri] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [modalMessage, setModalMessage] = useState('');
 
@@ -38,10 +31,6 @@ export default function AccountScreen() {
       const userData = await authService.getUser();
       if (!userData) throw new Error('No user data found');
       setUser(userData);
-      if (userData.avatar_url) {
-        setAvatarUri(userData.avatar_url);
-        setAvatarUrl(userData.avatar_url);
-      }
     } catch (error) {
       console.error('Failed to load user:', error);
       setModalMessage('Session expired. Please log in again.');
@@ -49,40 +38,7 @@ export default function AccountScreen() {
     }
   };
 
-  const handlePickAvatar = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      setModalMessage('Photo library access is required to change your profile picture.');
-      setModalVisible(true);
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
-
-    if (result.canceled || !result.assets[0]) return;
-
-    const uri = result.assets[0].uri;
-    setUploading(true);
-    try {
-      const url = await authService.updateAvatar(user.id, uri);
-      setAvatarUri(url);
-      setAvatarUrl(url);
-    } catch (error: any) {
-      console.error('Avatar upload failed:', error);
-      setModalMessage(error?.message ?? 'Failed to upload profile picture. Please try again.');
-      setModalVisible(true);
-    } finally {
-      setUploading(false);
-    }
-  };
-
   const handleLogout = async () => {
-    // Best-effort token removal — always proceed to logout regardless of outcome
     try {
       const storedToken = await pushNotificationService.getStoredPushToken();
       if (storedToken) {
@@ -97,7 +53,6 @@ export default function AccountScreen() {
 
     try {
       await authService.logout();
-      setAvatarUrl(null);
       setModalMessage('You have been logged out successfully.');
       setModalVisible(true);
       setTimeout(() => router.replace('/'), 1200);
@@ -141,30 +96,12 @@ export default function AccountScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Profile Card — avatar + username */}
+        {/* Profile Card */}
         <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
-          {avatarUri ? (
-            <Image source={{ uri: avatarUri }} style={styles.avatarImage} contentFit="cover" />
-          ) : (
-            <View style={[styles.avatarPlaceholder, { backgroundColor: c.chip }]}>
-              <Ionicons name="person" size={40} color={c.textSecondary} />
-            </View>
-          )}
+          <View style={[styles.avatarPlaceholder, { backgroundColor: c.chip }]}>
+            <Ionicons name="person" size={40} color={c.textSecondary} />
+          </View>
           <Text style={[styles.username, { color: c.textPrimary }]}>{user?.username || 'User'}</Text>
-          <TouchableOpacity
-            style={[styles.changePhotoButton, { backgroundColor: c.chip }]}
-            onPress={handlePickAvatar}
-            disabled={uploading}
-          >
-            {uploading ? (
-              <ActivityIndicator size={14} color={c.textSecondary} />
-            ) : (
-              <>
-                <Ionicons name="camera-outline" size={14} color={c.textSecondary} />
-                <Text style={[styles.changePhotoText, { color: c.textSecondary }]}>Change Photo</Text>
-              </>
-            )}
-          </TouchableOpacity>
         </View>
 
         {/* Contact Card */}
@@ -230,7 +167,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // Header
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -263,7 +199,6 @@ const styles = StyleSheet.create({
     gap: 16,
   },
 
-  // Shared card
   card: {
     borderRadius: 24,
     borderWidth: 1,
@@ -271,13 +206,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  // Profile card
-  avatarImage: {
-    width: 96,
-    height: 96,
-    borderRadius: 30,
-    marginBottom: 14,
-  },
   avatarPlaceholder: {
     width: 96,
     height: 96,
@@ -289,22 +217,8 @@ const styles = StyleSheet.create({
   username: {
     fontSize: 22,
     fontWeight: '700',
-    marginBottom: 12,
-  },
-  changePhotoButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 20,
-  },
-  changePhotoText: {
-    fontSize: 13,
-    fontWeight: '500',
   },
 
-  // Contact card
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -330,7 +244,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // Settings card
   settingsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -347,7 +260,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // Logout
   logoutButton: {
     backgroundColor: '#7F1D1D',
     borderRadius: 30,

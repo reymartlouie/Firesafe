@@ -1,5 +1,3 @@
-import { readAsStringAsync, EncodingType } from 'expo-file-system/legacy';
-import { toByteArray } from 'base64-js';
 import { supabase } from '../lib/supabaseClient';
 
 const authService = {
@@ -36,14 +34,14 @@ const authService = {
 
     if (error) throw new Error(error.message);
 
-    // Fetch profile to get admin status
+    // Fetch profile to get admin status and avatar
     const { data: profile } = await supabase
       .from('profiles')
-      .select('is_admin')
+      .select('is_admin, avatar_url')
       .eq('id', data.user.id)
       .maybeSingle();
 
-    return { ...data.user, is_admin: profile?.is_admin ?? false };
+    return { ...data.user, is_admin: profile?.is_admin ?? false, avatar_url: profile?.avatar_url ?? null };
   },
 
   // Logout user
@@ -69,43 +67,6 @@ const authService = {
     return { ...user, ...profile };
   },
 
-  // Upload avatar image and save public URL to profile
-  updateAvatar: async (userId: string, imageUri: string): Promise<string> => {
-    const rawExt = imageUri.split('?')[0].split('.').pop()?.toLowerCase() ?? 'jpg';
-    const ext = ['jpg', 'jpeg', 'png', 'webp'].includes(rawExt) ? rawExt : 'jpg';
-    const mimeType = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : `image/${ext}`;
-
-    // Fixed path — upsert always overwrites the same file, no need to delete first
-    const path = `${userId}/avatar`;
-
-    // Read image as base64 using the stable legacy API, then convert to bytes
-    const base64 = await readAsStringAsync(imageUri, { encoding: EncodingType.Base64 });
-    const bytes = toByteArray(base64);
-
-    const { error: uploadError } = await supabase.storage
-      .from('avatars')
-      .upload(path, bytes, { upsert: true, contentType: mimeType });
-
-    if (uploadError) throw new Error(uploadError.message);
-
-    const { data: urlData } = supabase.storage
-      .from('avatars')
-      .getPublicUrl(path);
-
-    // Store the clean URL without a timestamp so getUser() always returns a stable value.
-    // The ?t= cache-bust is added at render time (cachePolicy="none" on expo-image).
-    const avatarUrl = urlData.publicUrl;
-
-    const { error: updateError } = await supabase
-      .from('profiles')
-      .update({ avatar_url: avatarUrl })
-      .eq('id', userId);
-
-    if (updateError) throw new Error(updateError.message);
-
-    // Return with a fresh timestamp so the account screen immediately shows the new photo
-    return `${avatarUrl}?t=${Date.now()}`;
-  },
 };
 
 export default authService;
