@@ -1,87 +1,168 @@
 import { supabase } from '../lib/supabaseClient';
 
 export interface Node {
+  id: number;
   node_number: number;
-  latitude: number | null;
-  longitude: number | null;
-  location_name: string | null;
+  location_name: string;
+  latitude: number;
+  longitude: number;
+  description: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  updated_by: string | null;
 }
 
-const nodesService = {
-  getAllNodes: async (): Promise<Node[]> => {
-    const { data, error } = await supabase
-      .from('nodes')
-      .select('node_number, latitude, longitude, location_name')
-      .order('node_number');
+export interface UpdateNodeLocationParams {
+  node_number: number;
+  location_name: string;
+  latitude: number;
+  longitude: number;
+  description?: string;
+}
 
-    if (error) throw new Error(error.message);
-    return data ?? [];
-  },
+export interface SimulatedFireEventParams {
+  node_number: number;
+  risk: 'HIGH' | 'CRITICAL' | 'FIRE_DETECTED';
+  temperature?: number;
+  humidity?: number;
+  smoke_gas?: number;
+  description?: string;
+}
 
-  getNodeByNumber: async (nodeNumber: number): Promise<Node | null> => {
-    const { data, error } = await supabase
-      .from('nodes')
-      .select('node_number, latitude, longitude, location_name')
-      .eq('node_number', nodeNumber)
-      .maybeSingle();
+export interface FireEvent {
+  id: number;
+  node: number;
+  risk: string;
+  temperature: number;
+  humidity: number;
+  smoke_gas: number;
+  servo_angle: number | null;
+  notified: boolean;
+  notification_sent_at: string | null;
+  session_id: string | null;
+  description: string | null;
+  event_timestamp: string;
+}
 
-    if (error) throw new Error(error.message);
-    return data;
-  },
+class NodeManagementService {
+  async isAdmin(): Promise<boolean> {
+    try {
+      const { data, error } = await supabase.rpc('is_admin');
+      if (error) throw error;
+      return data === true;
+    } catch (error) {
+      console.error('Error checking admin status:', error);
+      return false;
+    }
+  }
 
-  updateNode: async (
-    nodeNumber: number,
-    updates: { latitude: number; longitude: number; location_name: string }
-  ) => {
-    const { error } = await supabase
-      .from('nodes')
-      .update(updates)
-      .eq('node_number', nodeNumber);
+  async isSuperAdmin(): Promise<boolean> {
+    try {
+      const { data, error } = await supabase.rpc('is_super_admin');
+      if (error) throw error;
+      return data === true;
+    } catch (error) {
+      console.error('Error checking super admin status:', error);
+      return false;
+    }
+  }
 
-    if (error) throw new Error(error.message);
-  },
+  async getAllNodes(): Promise<Node[]> {
+    try {
+      const { data, error } = await supabase
+        .from('nodes')
+        .select('*')
+        .order('node_number', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching nodes:', error);
+      return [];
+    }
+  }
 
-  addNode: async (node: {
-    node_number: number;
-    latitude: number | null;
-    longitude: number | null;
-    location_name: string | null;
-  }): Promise<Node> => {
-    const { data, error } = await supabase
-      .from('nodes')
-      .insert(node)
-      .select('node_number, latitude, longitude, location_name')
-      .single();
+  async getNodeByNumber(nodeNumber: number): Promise<Node | null> {
+    try {
+      const { data, error } = await supabase
+        .from('nodes')
+        .select('*')
+        .eq('node_number', nodeNumber)
+        .single();
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error(`Error fetching node ${nodeNumber}:`, error);
+      return null;
+    }
+  }
 
-    if (error) throw new Error(error.message);
-    return data;
-  },
+  async updateNodeLocation(params: UpdateNodeLocationParams): Promise<Node | null> {
+    try {
+      const adminStatus = await this.isAdmin();
+      if (!adminStatus) {
+        throw new Error('Only admins can update node locations');
+      }
+      const { data, error } = await supabase.rpc('update_node_location', {
+        p_node_number: params.node_number,
+        p_location_name: params.location_name,
+        p_latitude: params.latitude,
+        p_longitude: params.longitude,
+        p_description: params.description || null,
+      });
+      if (error) throw error;
+      return data && data.length > 0 ? data[0] : null;
+    } catch (error: any) {
+      console.error('Error updating node location:', error);
+      throw new Error(error.message || 'Failed to update node location');
+    }
+  }
 
-  deleteNode: async (nodeNumber: number) => {
-    const { error } = await supabase
-      .from('nodes')
-      .delete()
-      .eq('node_number', nodeNumber);
+  async insertSimulatedFireEvent(params: SimulatedFireEventParams): Promise<FireEvent | null> {
+    try {
+      const superAdminStatus = await this.isSuperAdmin();
+      if (!superAdminStatus) {
+        throw new Error('Only the super admin can insert simulated fire events');
+      }
+      const { data, error } = await supabase.rpc('insert_simulated_fire_event', {
+        p_node_number: params.node_number,
+        p_risk: params.risk,
+        p_temperature: params.temperature || null,
+        p_humidity: params.humidity || null,
+        p_smoke_gas: params.smoke_gas || null,
+        p_description: params.description || null,
+      });
+      if (error) throw error;
+      return data && data.length > 0 ? data[0] : null;
+    } catch (error: any) {
+      console.error('Error inserting simulated fire event:', error);
+      throw new Error(error.message || 'Failed to insert simulated fire event');
+    }
+  }
 
-    if (error) throw new Error(error.message);
-  },
-
-  subscribeToNodes: (callback: () => void) => {
-    const channel = supabase
-      .channel('nodes-realtime')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'nodes' },
-        () => {
-          callback();
-        }
-      )
+  subscribeToNodeChanges(callback: (node: Node) => void) {
+    const subscription = supabase
+      .channel('nodes_channel')
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'nodes',
+      }, (payload) => {
+        callback(payload.new as Node);
+      })
       .subscribe();
+    return subscription;
+  }
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  },
-};
+  async getNodeName(nodeNumber: number): Promise<string> {
+    try {
+      const node = await this.getNodeByNumber(nodeNumber);
+      return node?.location_name || `Node ${nodeNumber}`;
+    } catch (error) {
+      console.error('Error getting node name:', error);
+      return `Node ${nodeNumber}`;
+    }
+  }
+}
 
-export default nodesService;
+export default new NodeManagementService();

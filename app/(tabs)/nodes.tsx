@@ -1,495 +1,246 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Modal,
-  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
-import CustomModalAlert from '../CustomModalAlert';
-import { useAdmin } from '../../contexts/AdminContext';
+import nodeManagementService, { Node, SimulatedFireEventParams } from '../../services/nodesService';
 import { useTheme } from '../../contexts/ThemeContext';
-import nodesService, { Node } from '../../services/nodesService';
+import CustomModalAlert from '../CustomModalAlert';
 
-const light = { bg: '#FFFFFF', card: '#F3F4F6', border: '#E5E7EB', chip: '#E5E7EB', textPrimary: '#111827', textSecondary: '#6B7280' };
-const dark  = { bg: '#191919', card: '#202020', border: '#2A2A2A', chip: '#262626', textPrimary: '#E6E6E5', textSecondary: '#9B9A97' };
+const light = { bg: '#FFFFFF', card: '#F9FAFB', border: '#E5E7EB', textPrimary: '#111827', textSecondary: '#6B7280', nodeLocation: '#1F2937', simulatorToggleBg: '#FFF7ED', simulatorToggleBorder: '#FDBA74', simulatorControlsBg: '#F9FAFB', nodeSelectorBg: '#FFFFFF', nodeSelectorActiveBg: '#FFF7ED' };
+const dark  = { bg: '#191919', card: '#202020', border: '#2A2A2A', textPrimary: '#E6E6E5', textSecondary: '#9B9A97', nodeLocation: '#D1D5DB', simulatorToggleBg: '#2A1A0A', simulatorToggleBorder: '#92400E', simulatorControlsBg: '#202020', nodeSelectorBg: '#2A2A2A', nodeSelectorActiveBg: '#3D1F0A' };
 
 export default function NodesScreen() {
-  const { isAdmin } = useAdmin();
   const { isDark } = useTheme();
   const c = isDark ? dark : light;
+
   const [nodes, setNodes] = useState<Node[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
-  // Edit modal state
-  const [editModalVisible, setEditModalVisible] = useState(false);
-  const [editingNode, setEditingNode] = useState<Node | null>(null);
-  const [editLocationName, setEditLocationName] = useState('');
-  const [editLatitude, setEditLatitude] = useState('');
-  const [editLongitude, setEditLongitude] = useState('');
-  const [saving, setSaving] = useState(false);
+  const [showSimulator, setShowSimulator] = useState(false);
+  const [selectedNode, setSelectedNode] = useState<number>(1);
+  const [simulatorLoading, setSimulatorLoading] = useState(false);
 
-  // Delete confirmation state
-  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
-  const [deletingNode, setDeletingNode] = useState<Node | null>(null);
-  const [deleting, setDeleting] = useState(false);
-
-  // Add node modal state
-  const [addModalVisible, setAddModalVisible] = useState(false);
-  const [addNodeNumber, setAddNodeNumber] = useState('');
-  const [addLocationName, setAddLocationName] = useState('');
-  const [addLatitude, setAddLatitude] = useState('');
-  const [addLongitude, setAddLongitude] = useState('');
-  const [adding, setAdding] = useState(false);
-
-  // Alert modal state
-  const [alertVisible, setAlertVisible] = useState(false);
-  const [alertTitle, setAlertTitle] = useState('');
-  const [alertMessage, setAlertMessage] = useState('');
-
-  const fetchNodes = useCallback(async () => {
-    try {
-      setError(null);
-      const data = await nodesService.getAllNodes();
-      setNodes(data);
-    } catch (err: any) {
-      console.error('Failed to fetch nodes:', err.message);
-      setError(err.message || 'Failed to fetch nodes');
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, []);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalMessage, setModalMessage] = useState('');
+  const [modalTitle, setModalTitle] = useState('');
 
   useEffect(() => {
-    fetchNodes();
+    loadNodes();
+    checkSuperAdmin();
+  }, []);
 
-    const unsubscribe = nodesService.subscribeToNodes(() => {
-      fetchNodes();
-    });
-
-    return () => {
-      unsubscribe();
-    };
-  }, [fetchNodes]);
-
-  const openEditModal = (node: Node) => {
-    setEditingNode(node);
-    setEditLocationName(node.location_name ?? '');
-    setEditLatitude(node.latitude?.toString() ?? '');
-    setEditLongitude(node.longitude?.toString() ?? '');
-    setEditModalVisible(true);
-  };
-
-  const handleSave = async () => {
-    if (!editingNode) return;
-
-    const lat = parseFloat(editLatitude);
-    const lng = parseFloat(editLongitude);
-
-    if (isNaN(lat) || isNaN(lng)) {
-      setAlertTitle('Invalid Input');
-      setAlertMessage('Latitude and longitude must be valid numbers.');
-      setAlertVisible(true);
-      return;
-    }
-
-    setSaving(true);
+  const loadNodes = async () => {
+    setLoading(true);
     try {
-      await nodesService.updateNode(editingNode.node_number, {
-        latitude: lat,
-        longitude: lng,
-        location_name: editLocationName.trim(),
-      });
-
-      // Update local state
-      setNodes((prev) =>
-        prev.map((n) =>
-          n.node_number === editingNode.node_number
-            ? { ...n, latitude: lat, longitude: lng, location_name: editLocationName.trim() }
-            : n
-        )
-      );
-
-      setEditModalVisible(false);
-      setAlertTitle('Success');
-      setAlertMessage('Node location updated successfully.');
-      setAlertVisible(true);
-    } catch (err: any) {
-      setAlertTitle('Error');
-      setAlertMessage(err.message || 'Failed to update node.');
-      setAlertVisible(true);
+      const allNodes = await nodeManagementService.getAllNodes();
+      setNodes(allNodes);
+    } catch (error) {
+      console.error('Error loading nodes:', error);
     } finally {
-      setSaving(false);
+      setLoading(false);
     }
   };
 
-  const openDeleteModal = (node: Node) => {
-    setDeletingNode(node);
-    setDeleteModalVisible(true);
-  };
-
-  const handleDelete = async () => {
-    if (!deletingNode) return;
-
-    setDeleting(true);
+  const checkSuperAdmin = async () => {
     try {
-      await nodesService.deleteNode(deletingNode.node_number);
-      setNodes((prev) => prev.filter((n) => n.node_number !== deletingNode.node_number));
-      setDeleteModalVisible(false);
-      setAlertTitle('Success');
-      setAlertMessage(`Node ${deletingNode.node_number} has been removed.`);
-      setAlertVisible(true);
-    } catch (err: any) {
-      setAlertTitle('Error');
-      setAlertMessage(err.message || 'Failed to delete node.');
-      setAlertVisible(true);
-    } finally {
-      setDeleting(false);
+      const superAdminStatus = await nodeManagementService.isSuperAdmin();
+      setIsSuperAdmin(superAdminStatus);
+    } catch (error) {
+      console.error('Error checking super admin status:', error);
     }
   };
 
-  const openAddModal = () => {
-    const nextNumber = nodes.length > 0
-      ? Math.max(...nodes.map((n) => n.node_number)) + 1
-      : 1;
-    setAddNodeNumber(nextNumber.toString());
-    setAddLocationName('');
-    setAddLatitude('');
-    setAddLongitude('');
-    setAddModalVisible(true);
+  const showModal = (title: string, message: string) => {
+    setModalTitle(title);
+    setModalMessage(message);
+    setModalVisible(true);
   };
 
-  const handleAdd = async () => {
-    const nodeNum = parseInt(addNodeNumber, 10);
-    if (isNaN(nodeNum) || nodeNum <= 0) {
-      setAlertTitle('Invalid Input');
-      setAlertMessage('Node number must be a valid positive number.');
-      setAlertVisible(true);
-      return;
-    }
-
-    if (nodes.some((n) => n.node_number === nodeNum)) {
-      setAlertTitle('Duplicate');
-      setAlertMessage(`Node ${nodeNum} already exists.`);
-      setAlertVisible(true);
-      return;
-    }
-
-    const lat = addLatitude.trim() ? parseFloat(addLatitude) : null;
-    const lng = addLongitude.trim() ? parseFloat(addLongitude) : null;
-
-    if ((addLatitude.trim() && lat === null) || (addLongitude.trim() && lng === null) ||
-        (addLatitude.trim() && isNaN(lat!)) || (addLongitude.trim() && isNaN(lng!))) {
-      setAlertTitle('Invalid Input');
-      setAlertMessage('Latitude and longitude must be valid numbers.');
-      setAlertVisible(true);
-      return;
-    }
-
-    setAdding(true);
+  const handleCreateFireEvent = async (riskLevel: 'HIGH' | 'CRITICAL' | 'FIRE_DETECTED') => {
+    setSimulatorLoading(true);
     try {
-      const newNode = await nodesService.addNode({
-        node_number: nodeNum,
-        latitude: lat,
-        longitude: lng,
-        location_name: addLocationName.trim() || null,
-      });
-      setNodes((prev) => [...prev, newNode].sort((a, b) => a.node_number - b.node_number));
-      setAddModalVisible(false);
-      setAlertTitle('Success');
-      setAlertMessage(`Node ${nodeNum} has been added.`);
-      setAlertVisible(true);
-    } catch (err: any) {
-      setAlertTitle('Error');
-      setAlertMessage(err.message || 'Failed to add node.');
-      setAlertVisible(true);
+      const params: SimulatedFireEventParams = {
+        node_number: selectedNode,
+        risk: riskLevel,
+      };
+
+      await nodeManagementService.insertSimulatedFireEvent(params);
+      showModal('Fire Event Created', `${riskLevel} event created for Node ${selectedNode}!`);
+
+      setTimeout(() => loadNodes(), 1000);
+    } catch (error: any) {
+      showModal('Error', error.message || 'Failed to create fire event.');
     } finally {
-      setAdding(false);
+      setSimulatorLoading(false);
     }
+  };
+
+  const handleNodePress = (node: Node) => {
+    console.log('Node pressed:', node);
   };
 
   return (
     <View style={[styles.container, { backgroundColor: c.bg }]}>
-      {/* Header */}
+      <CustomModalAlert
+        visible={modalVisible}
+        title={modalTitle}
+        message={modalMessage}
+        onClose={() => setModalVisible(false)}
+      />
+
       <View style={[styles.header, { backgroundColor: c.bg }]}>
-        <View>
-          <Text style={[styles.headerTitle, { color: c.textPrimary }]}>Nodes</Text>
-          <Text style={[styles.headerSubtitle, { color: c.textSecondary }]}>Early alerts. Safer communities.</Text>
-        </View>
-        <TouchableOpacity
-          style={styles.accountButton}
-          onPress={() => router.push('/account')}
-        >
-          <View style={[styles.accountEmojiContainer, { backgroundColor: c.chip }]}>
-            <Ionicons name="person" size={22} color={c.textSecondary} />
-          </View>
-          <Text style={[styles.accountText, { color: c.textPrimary }]}>Account</Text>
-        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { color: c.textPrimary }]}>Nodes</Text>
+        <Text style={[styles.headerSubtitle, { color: c.textSecondary }]}>Fire Detection Points</Text>
       </View>
 
-      {/* Nodes List */}
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={() => {
-              setRefreshing(true);
-              fetchNodes();
-            }}
-            tintColor="#1F2937"
-          />
-        }
       >
-        {loading ? (
-          <ActivityIndicator size="large" color="#1F2937" style={{ marginTop: 40 }} />
-        ) : error ? (
-          <View style={styles.emptyState}>
-            <Ionicons name="alert-circle-outline" size={48} color="#EF4444" />
-            <Text style={styles.emptyStateTitle}>Failed to load nodes</Text>
-            <Text style={styles.emptyStateSubtitle}>{error}</Text>
+        <View style={styles.section}>
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#EA580C" />
+              <Text style={[styles.loadingText, { color: c.textSecondary }]}>Loading nodes...</Text>
+            </View>
+          ) : (
+            <>
+              {nodes.map((node) => (
+                <TouchableOpacity
+                  key={node.id}
+                  style={[styles.nodeCard, { backgroundColor: c.card, borderColor: c.border }]}
+                  onPress={() => handleNodePress(node)}
+                >
+                  <View style={styles.nodeCardContent}>
+                    <View style={styles.nodeInfo}>
+                      <Text style={[styles.nodeNumber, { color: c.textPrimary }]}>Node {node.node_number}</Text>
+                      <Text style={[styles.nodeLocation, { color: c.nodeLocation }]}>{node.location_name}</Text>
+                      <Text style={[styles.nodeCoords, { color: c.textSecondary }]}>
+                        {node.latitude.toFixed(4)}°N, {node.longitude.toFixed(4)}°E
+                      </Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={24} color={c.textSecondary} />
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </>
+          )}
+        </View>
+
+        {isSuperAdmin && (
+          <View style={styles.simulatorSection}>
             <TouchableOpacity
-              style={styles.retryButton}
-              onPress={() => {
-                setLoading(true);
-                fetchNodes();
-              }}
+              style={[styles.simulatorToggle, { backgroundColor: c.simulatorToggleBg, borderColor: c.simulatorToggleBorder }]}
+              onPress={() => setShowSimulator(!showSimulator)}
             >
-              <Text style={styles.retryButtonText}>Retry</Text>
+              <View style={styles.simulatorToggleContent}>
+                <MaterialCommunityIcons name="fire-alert" size={24} color="#EA580C" />
+                <View style={styles.simulatorToggleTextContainer}>
+                  <Text style={[styles.simulatorToggleTitle, { color: c.textPrimary }]}>Fire Event Simulator</Text>
+                  <Text style={[styles.simulatorToggleSubtitle, { color: c.textSecondary }]}>
+                    {showSimulator ? 'Tap to hide' : 'Tap to show demo controls'}
+                  </Text>
+                </View>
+              </View>
+              <Ionicons
+                name={showSimulator ? 'chevron-up' : 'chevron-down'}
+                size={24}
+                color={c.textSecondary}
+              />
             </TouchableOpacity>
-          </View>
-        ) : nodes.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Ionicons name="hardware-chip-outline" size={48} color="#9CA3AF" />
-            <Text style={styles.emptyStateTitle}>No nodes found</Text>
-            <Text style={styles.emptyStateSubtitle}>Pull down to refresh</Text>
-          </View>
-        ) : (
-          nodes.map((node) => (
-            <TouchableOpacity
-              key={node.node_number}
-              style={[styles.nodeCard, { backgroundColor: c.card, borderColor: c.border }]}
-              onPress={() => router.push(`/node/${node.node_number}`)}
-            >
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.nodeTitle, { color: c.textPrimary }]}>Node {node.node_number}</Text>
-                <Text style={[styles.nodeSubtitle, { color: c.textSecondary }]}>
-                  {node.location_name || 'No location set'}
+
+            {showSimulator && (
+              <View style={[styles.simulatorControls, { backgroundColor: c.simulatorControlsBg, borderColor: c.border }]}>
+                <Text style={[styles.simulatorLabel, { color: c.textPrimary }]}>Select Node</Text>
+                <View style={styles.nodeSelector}>
+                  {nodes.map((node) => (
+                    <TouchableOpacity
+                      key={node.id}
+                      style={[
+                        styles.nodeSelectorButton,
+                        { backgroundColor: c.nodeSelectorBg, borderColor: c.border },
+                        selectedNode === node.node_number && { backgroundColor: c.nodeSelectorActiveBg, borderColor: '#EA580C' },
+                      ]}
+                      onPress={() => setSelectedNode(node.node_number)}
+                      disabled={simulatorLoading}
+                    >
+                      <Text
+                        style={[
+                          styles.nodeSelectorText,
+                          { color: c.textSecondary },
+                          selectedNode === node.node_number && styles.nodeSelectorTextActive,
+                        ]}
+                      >
+                        {node.node_number}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                <Text style={[styles.simulatorLabel, { color: c.textPrimary }]}>Create Fire Event</Text>
+
+                <TouchableOpacity
+                  style={[styles.fireEventButton, styles.highRiskButton]}
+                  onPress={() => handleCreateFireEvent('HIGH')}
+                  disabled={simulatorLoading}
+                >
+                  {simulatorLoading ? (
+                    <ActivityIndicator color="#FFFFFF" size="small" />
+                  ) : (
+                    <>
+                      <MaterialCommunityIcons name="fire" size={20} color="#FFFFFF" />
+                      <Text style={styles.fireEventText}>High Risk (36°C, 35% RH)</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.fireEventButton, styles.criticalButton]}
+                  onPress={() => handleCreateFireEvent('CRITICAL')}
+                  disabled={simulatorLoading}
+                >
+                  {simulatorLoading ? (
+                    <ActivityIndicator color="#FFFFFF" size="small" />
+                  ) : (
+                    <>
+                      <MaterialCommunityIcons name="fire-alert" size={20} color="#FFFFFF" />
+                      <Text style={styles.fireEventText}>Critical (39°C, 25% RH)</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.fireEventButton, styles.fireButton]}
+                  onPress={() => handleCreateFireEvent('FIRE_DETECTED')}
+                  disabled={simulatorLoading}
+                >
+                  {simulatorLoading ? (
+                    <ActivityIndicator color="#FFFFFF" size="small" />
+                  ) : (
+                    <>
+                      <MaterialCommunityIcons name="fire-circle" size={20} color="#FFFFFF" />
+                      <Text style={styles.fireEventText}>Fire Detected (45°C, 20% RH)</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+
+                <Text style={[styles.infoText, { color: c.textSecondary }]}>
+                  Creates real fire events for thesis defense demonstrations. Events trigger all notifications and appear in dashboard like actual sensor readings.
                 </Text>
               </View>
-              <View style={styles.cardActions}>
-                {isAdmin && (
-                  <>
-                    <TouchableOpacity
-                      style={styles.editButton}
-                      onPress={(e) => {
-                        e.stopPropagation();
-                        openEditModal(node);
-                      }}
-                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                    >
-                      <Ionicons name="create-outline" size={22} color={c.textSecondary} />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.editButton}
-                      onPress={(e) => {
-                        e.stopPropagation();
-                        openDeleteModal(node);
-                      }}
-                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                    >
-                      <Ionicons name="trash-outline" size={22} color="#EF4444" />
-                    </TouchableOpacity>
-                  </>
-                )}
-                <Ionicons name="arrow-forward" size={24} color={c.textPrimary} />
-              </View>
-            </TouchableOpacity>
-          ))
-        )}
-        {/* Add Node Button - admin only, shown at the bottom */}
-        {!loading && !error && isAdmin && (
-          <TouchableOpacity style={[styles.addNodeCard, { backgroundColor: c.bg, borderColor: c.border }]} onPress={openAddModal}>
-            <Ionicons name="add-circle-outline" size={32} color={c.textSecondary} />
-            <Text style={[styles.addNodeText, { color: c.textSecondary }]}>Add New Node</Text>
-          </TouchableOpacity>
+            )}
+          </View>
         )}
       </ScrollView>
-
-      {/* Edit Node Modal */}
-      <Modal visible={editModalVisible} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>
-              Edit Node {editingNode?.node_number}
-            </Text>
-
-            <Text style={styles.inputLabel}>Location Name</Text>
-            <TextInput
-              style={styles.input}
-              value={editLocationName}
-              onChangeText={setEditLocationName}
-              placeholder="Enter location name"
-              placeholderTextColor="#6B7280"
-            />
-
-            <Text style={styles.inputLabel}>Latitude</Text>
-            <TextInput
-              style={styles.input}
-              value={editLatitude}
-              onChangeText={setEditLatitude}
-              placeholder="e.g. 14.5995"
-              placeholderTextColor="#6B7280"
-              keyboardType="numeric"
-            />
-
-            <Text style={styles.inputLabel}>Longitude</Text>
-            <TextInput
-              style={styles.input}
-              value={editLongitude}
-              onChangeText={setEditLongitude}
-              placeholder="e.g. 120.9842"
-              placeholderTextColor="#6B7280"
-              keyboardType="numeric"
-            />
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={() => setEditModalVisible(false)}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.saveButton, saving && { opacity: 0.6 }]}
-                onPress={handleSave}
-                disabled={saving}
-              >
-                <Text style={styles.saveButtonText}>
-                  {saving ? 'Saving...' : 'Save'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Delete Confirmation Modal */}
-      <Modal visible={deleteModalVisible} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Remove Node</Text>
-            <Text style={styles.deleteMessage}>
-              Are you sure you want to remove Node {deletingNode?.node_number}
-              {deletingNode?.location_name ? ` (${deletingNode.location_name})` : ''}?
-              This action cannot be undone.
-            </Text>
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={() => setDeleteModalVisible(false)}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.deleteConfirmButton, deleting && { opacity: 0.6 }]}
-                onPress={handleDelete}
-                disabled={deleting}
-              >
-                <Text style={styles.saveButtonText}>
-                  {deleting ? 'Removing...' : 'Remove'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Add Node Modal */}
-      <Modal visible={addModalVisible} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Add New Node</Text>
-
-            <Text style={styles.inputLabel}>Node Number</Text>
-            <TextInput
-              style={styles.input}
-              value={addNodeNumber}
-              onChangeText={setAddNodeNumber}
-              placeholder="e.g. 1"
-              placeholderTextColor="#6B7280"
-              keyboardType="numeric"
-            />
-
-            <Text style={styles.inputLabel}>Location Name</Text>
-            <TextInput
-              style={styles.input}
-              value={addLocationName}
-              onChangeText={setAddLocationName}
-              placeholder="Enter location name (optional)"
-              placeholderTextColor="#6B7280"
-            />
-
-            <Text style={styles.inputLabel}>Latitude</Text>
-            <TextInput
-              style={styles.input}
-              value={addLatitude}
-              onChangeText={setAddLatitude}
-              placeholder="e.g. 14.5995 (optional)"
-              placeholderTextColor="#6B7280"
-              keyboardType="numeric"
-            />
-
-            <Text style={styles.inputLabel}>Longitude</Text>
-            <TextInput
-              style={styles.input}
-              value={addLongitude}
-              onChangeText={setAddLongitude}
-              placeholder="e.g. 120.9842 (optional)"
-              placeholderTextColor="#6B7280"
-              keyboardType="numeric"
-            />
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={() => setAddModalVisible(false)}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.saveButton, adding && { opacity: 0.6 }]}
-                onPress={handleAdd}
-                disabled={adding}
-              >
-                <Text style={styles.saveButtonText}>
-                  {adding ? 'Adding...' : 'Add'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Alert Modal */}
-      <CustomModalAlert
-        visible={alertVisible}
-        title={alertTitle}
-        message={alertMessage}
-        onClose={() => setAlertVisible(false)}
-      />
     </View>
   );
 }
@@ -497,217 +248,155 @@ export default function NodesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
     paddingHorizontal: 20,
-    paddingTop: 80,
+    paddingTop: 60,
     paddingBottom: 20,
-    backgroundColor: '#FFFFFF',
   },
   headerTitle: {
     fontSize: 36,
     fontWeight: '700',
-    color: '#000000',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   headerSubtitle: {
     fontSize: 15,
-    color: '#000000',
-    fontWeight: '400',
-    marginBottom: 20,
-  },
-  accountButton: {
-    alignItems: 'center',
-  },
-  accountEmojiContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#E5E7EB',
-    marginBottom: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  accountEmoji: {
-    fontSize: 28,
-  },
-  accountAvatarImage: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-  },
-  accountText: {
-    fontSize: 11,
-    color: '#000000',
     fontWeight: '400',
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
+    paddingBottom: 100,
+  },
+  section: {
     paddingHorizontal: 20,
-    paddingTop: 24,
-    paddingBottom: 140,
+    paddingTop: 16,
+  },
+  loadingContainer: {
+    paddingVertical: 40,
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
   },
   nodeCard: {
-    backgroundColor: '#F3F4F6',
-    borderRadius: 32,
-    padding: 40,
-    marginBottom: 20,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 12,
+    borderWidth: 1,
+  },
+  nodeCardContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
   },
-  nodeTitle: {
-    fontSize: 24,
+  nodeInfo: {
+    flex: 1,
+  },
+  nodeNumber: {
+    fontSize: 18,
     fontWeight: '700',
-    color: '#111827',
-    marginBottom: 6,
+    marginBottom: 4,
   },
-  nodeSubtitle: {
-    fontSize: 14,
-    color: '#6B7280',
-    fontWeight: '400',
+  nodeLocation: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 4,
   },
-  cardActions: {
+  nodeCoords: {
+    fontSize: 13,
+  },
+  simulatorSection: {
+    marginTop: 24,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  simulatorToggle: {
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 2,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  simulatorToggleContent: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    flex: 1,
   },
-  editButton: {
-    padding: 6,
+  simulatorToggleTextContainer: {
+    flex: 1,
   },
-  addNodeCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 32,
-    padding: 40,
-    marginBottom: 20,
+  simulatorToggleTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  simulatorToggleSubtitle: {
+    fontSize: 13,
+  },
+  simulatorControls: {
+    marginTop: 16,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+  },
+  simulatorLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 12,
+    marginTop: 8,
+  },
+  nodeSelector: {
     flexDirection: 'row',
-    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  nodeSelectorButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#D1D5DB',
-    borderStyle: 'dashed',
-    gap: 10,
   },
-  addNodeText: {
-    fontSize: 18,
+  nodeSelectorText: {
+    fontSize: 14,
     fontWeight: '600',
-    color: '#6B7280',
   },
-  deleteMessage: {
-    fontSize: 15,
-    color: '#D1D1D6',
-    textAlign: 'center',
-    marginBottom: 20,
-    lineHeight: 22,
+  nodeSelectorTextActive: {
+    color: '#EA580C',
   },
-  deleteConfirmButton: {
-    flex: 1,
-    paddingVertical: 12,
-    marginLeft: 8,
-    borderRadius: 10,
-    backgroundColor: '#EF4444',
-    alignItems: 'center',
-  },
-  emptyState: {
+  fireEventButton: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 60,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    marginBottom: 10,
     gap: 8,
   },
-  emptyStateTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#374151',
-    marginTop: 8,
+  highRiskButton: {
+    backgroundColor: '#EA580C',
   },
-  emptyStateSubtitle: {
-    fontSize: 14,
-    color: '#6B7280',
-    textAlign: 'center',
+  criticalButton: {
+    backgroundColor: '#DC2626',
   },
-  retryButton: {
-    marginTop: 16,
-    backgroundColor: '#1F2937',
-    paddingHorizontal: 24,
-    paddingVertical: 10,
-    borderRadius: 10,
+  fireButton: {
+    backgroundColor: '#991B1B',
   },
-  retryButtonText: {
+  fireEventText: {
     color: '#FFFFFF',
-    fontWeight: '600',
     fontSize: 15,
-  },
-  // Edit Modal styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    width: '85%',
-    backgroundColor: '#1C1C1E',
-    borderRadius: 20,
-    padding: 25,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  inputLabel: {
-    fontSize: 13,
     fontWeight: '600',
-    color: '#D1D1D6',
-    marginBottom: 6,
   },
-  input: {
-    backgroundColor: '#2C2C2E',
-    borderRadius: 10,
-    padding: 12,
-    fontSize: 15,
-    color: '#FFFFFF',
-    marginBottom: 16,
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 8,
-  },
-  cancelButton: {
-    flex: 1,
-    paddingVertical: 12,
-    marginRight: 8,
-    borderRadius: 10,
-    backgroundColor: '#2C2C2E',
-    alignItems: 'center',
-  },
-  cancelButtonText: {
-    color: '#D1D1D6',
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  saveButton: {
-    flex: 1,
-    paddingVertical: 12,
-    marginLeft: 8,
-    borderRadius: 10,
-    backgroundColor: '#34C759',
-    alignItems: 'center',
-  },
-  saveButtonText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-    fontSize: 16,
+  infoText: {
+    marginTop: 12,
+    fontSize: 12,
+    lineHeight: 18,
   },
 });
