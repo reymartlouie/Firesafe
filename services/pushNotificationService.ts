@@ -43,14 +43,7 @@ const pushNotificationService = {
         return null;
       }
 
-      // Get the Expo push token
-      const tokenData = await Notifications.getExpoPushTokenAsync({
-        projectId: 'eeed762d-729e-41da-a627-986c168e8487',
-      });
-
-      const expoPushToken = tokenData.data;
-
-      // Configure Android notification channel (required for Android)
+      // Configure Android notification channel before fetching token
       if (Platform.OS === 'android') {
         await Notifications.setNotificationChannelAsync('fire-alerts', {
           name: 'Fire Alerts',
@@ -61,10 +54,17 @@ const pushNotificationService = {
         });
       }
 
+      // Get the Expo push token
+      const tokenData = await Notifications.getExpoPushTokenAsync({
+        projectId: 'eeed762d-729e-41da-a627-986c168e8487',
+      });
+
+      const expoPushToken = tokenData.data;
+
       return expoPushToken;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error registering for push notifications:', error);
-      return null;
+      throw new Error(error?.message || String(error));
     }
   },
 

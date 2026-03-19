@@ -73,12 +73,14 @@ export default function SignInScreen() {
 
       await authService.login(username, password);
 
-      const expoPushToken = await pushNotificationService.registerForPushNotifications();
-      if (expoPushToken) {
-        await pushNotificationService.savePushToken(expoPushToken);
-        console.log('Push notifications registered:', expoPushToken);
-      } else {
-        console.log('Push notifications not available or permission denied');
+      try {
+        const expoPushToken = await pushNotificationService.registerForPushNotifications();
+        if (expoPushToken) {
+          await pushNotificationService.savePushToken(expoPushToken);
+        }
+      } catch (pushError: any) {
+        showModal('Push Token Error', pushError?.message || 'Failed to register push notifications');
+        return;
       }
 
       showModal('Success', `Welcome back, ${username}!`);
