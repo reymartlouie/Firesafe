@@ -140,6 +140,50 @@ class NodeManagementService {
     }
   }
 
+  async updateNode(
+    nodeNumber: number,
+    updates: { latitude: number; longitude: number; location_name: string }
+  ): Promise<void> {
+    const { error } = await supabase
+      .from('nodes')
+      .update(updates)
+      .eq('node_number', nodeNumber);
+    if (error) throw new Error(error.message);
+  }
+
+  async addNode(node: {
+    node_number: number;
+    latitude: number | null;
+    longitude: number | null;
+    location_name: string | null;
+  }): Promise<Node> {
+    const { data, error } = await supabase
+      .from('nodes')
+      .insert(node)
+      .select('*')
+      .single();
+    if (error) throw new Error(error.message);
+    return data;
+  }
+
+  async deleteNode(nodeNumber: number): Promise<void> {
+    const { error } = await supabase
+      .from('nodes')
+      .delete()
+      .eq('node_number', nodeNumber);
+    if (error) throw new Error(error.message);
+  }
+
+  subscribeToNodes(callback: () => void): () => void {
+    const channel = supabase
+      .channel('nodes-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'nodes' }, () => {
+        callback();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }
+
   subscribeToNodeChanges(callback: (node: Node) => void) {
     const subscription = supabase
       .channel('nodes_channel')
