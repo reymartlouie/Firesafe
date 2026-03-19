@@ -23,7 +23,7 @@ export interface UpdateNodeLocationParams {
 
 export interface SimulatedFireEventParams {
   node_number: number;
-  risk: 'HIGH' | 'CRITICAL' | 'FIRE_DETECTED';
+  risk: 'HIGH' | 'CRITICAL';
   temperature?: number;
   humidity?: number;
   smoke_gas?: number;

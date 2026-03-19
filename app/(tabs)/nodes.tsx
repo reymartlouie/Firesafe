@@ -61,6 +61,9 @@ export default function NodesScreen() {
   const [showSimulator, setShowSimulator] = useState(false);
   const [selectedNode, setSelectedNode] = useState<number>(1);
   const [simulatorLoading, setSimulatorLoading] = useState(false);
+  const [simTemperature, setSimTemperature] = useState('');
+  const [simHumidity, setSimHumidity] = useState('');
+  const [simSmokeGas, setSimSmokeGas] = useState('');
 
   const fetchNodes = useCallback(async () => {
     try {
@@ -209,12 +212,26 @@ export default function NodesScreen() {
     }
   };
 
-  const handleCreateFireEvent = async (riskLevel: 'HIGH' | 'CRITICAL' | 'FIRE_DETECTED') => {
+  const handleCreateFireEvent = async (riskLevel: 'HIGH' | 'CRITICAL') => {
     setSimulatorLoading(true);
     try {
+      const temp = simTemperature.trim() ? parseFloat(simTemperature) : undefined;
+      const hum = simHumidity.trim() ? parseFloat(simHumidity) : undefined;
+      const smoke = simSmokeGas.trim() ? parseFloat(simSmokeGas) : undefined;
+
+      if ((simTemperature.trim() && isNaN(temp!)) ||
+          (simHumidity.trim() && isNaN(hum!)) ||
+          (simSmokeGas.trim() && isNaN(smoke!))) {
+        showAlert('Invalid Input', 'Sensor values must be valid numbers.');
+        return;
+      }
+
       const params: SimulatedFireEventParams = {
         node_number: selectedNode,
         risk: riskLevel,
+        temperature: temp,
+        humidity: hum,
+        smoke_gas: smoke,
       };
       await nodeManagementService.insertSimulatedFireEvent(params);
       showAlert('Fire Event Created', `${riskLevel} event created for Node ${selectedNode}!`);
@@ -390,6 +407,50 @@ export default function NodesScreen() {
                   ))}
                 </View>
 
+                <Text style={[styles.simulatorLabel, { color: c.textPrimary }]}>Sensor Values (optional)</Text>
+                <Text style={[styles.sensorHint, { color: c.textSecondary }]}>
+                  Leave blank to use defaults for each risk level.
+                </Text>
+
+                <View style={styles.sensorRow}>
+                  <View style={styles.sensorField}>
+                    <Text style={[styles.sensorLabel, { color: c.textSecondary }]}>Temp (°C)</Text>
+                    <TextInput
+                      style={[styles.sensorInput, { backgroundColor: c.card, borderColor: c.border, color: c.textPrimary }]}
+                      value={simTemperature}
+                      onChangeText={setSimTemperature}
+                      placeholder="e.g. 36"
+                      placeholderTextColor={c.textSecondary}
+                      keyboardType="numeric"
+                      editable={!simulatorLoading}
+                    />
+                  </View>
+                  <View style={styles.sensorField}>
+                    <Text style={[styles.sensorLabel, { color: c.textSecondary }]}>Humidity (%)</Text>
+                    <TextInput
+                      style={[styles.sensorInput, { backgroundColor: c.card, borderColor: c.border, color: c.textPrimary }]}
+                      value={simHumidity}
+                      onChangeText={setSimHumidity}
+                      placeholder="e.g. 35"
+                      placeholderTextColor={c.textSecondary}
+                      keyboardType="numeric"
+                      editable={!simulatorLoading}
+                    />
+                  </View>
+                  <View style={styles.sensorField}>
+                    <Text style={[styles.sensorLabel, { color: c.textSecondary }]}>Smoke (PPM)</Text>
+                    <TextInput
+                      style={[styles.sensorInput, { backgroundColor: c.card, borderColor: c.border, color: c.textPrimary }]}
+                      value={simSmokeGas}
+                      onChangeText={setSimSmokeGas}
+                      placeholder="e.g. 150"
+                      placeholderTextColor={c.textSecondary}
+                      keyboardType="numeric"
+                      editable={!simulatorLoading}
+                    />
+                  </View>
+                </View>
+
                 <Text style={[styles.simulatorLabel, { color: c.textPrimary }]}>Create Fire Event</Text>
 
                 <TouchableOpacity
@@ -402,7 +463,7 @@ export default function NodesScreen() {
                   ) : (
                     <>
                       <MaterialCommunityIcons name="fire" size={20} color="#FFFFFF" />
-                      <Text style={styles.fireEventText}>High Risk (36°C, 35% RH)</Text>
+                      <Text style={styles.fireEventText}>High Risk</Text>
                     </>
                   )}
                 </TouchableOpacity>
@@ -417,22 +478,7 @@ export default function NodesScreen() {
                   ) : (
                     <>
                       <MaterialCommunityIcons name="fire-alert" size={20} color="#FFFFFF" />
-                      <Text style={styles.fireEventText}>Critical (39°C, 25% RH)</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.fireEventButton, styles.fireButton]}
-                  onPress={() => handleCreateFireEvent('FIRE_DETECTED')}
-                  disabled={simulatorLoading}
-                >
-                  {simulatorLoading ? (
-                    <ActivityIndicator color="#FFFFFF" size="small" />
-                  ) : (
-                    <>
-                      <MaterialCommunityIcons name="fire-circle" size={20} color="#FFFFFF" />
-                      <Text style={styles.fireEventText}>Fire Detected (45°C, 20% RH)</Text>
+                      <Text style={styles.fireEventText}>Critical</Text>
                     </>
                   )}
                 </TouchableOpacity>
@@ -783,9 +829,6 @@ const styles = StyleSheet.create({
   criticalButton: {
     backgroundColor: '#DC2626',
   },
-  fireButton: {
-    backgroundColor: '#991B1B',
-  },
   fireEventText: {
     color: '#FFFFFF',
     fontSize: 15,
@@ -795,6 +838,31 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 12,
     lineHeight: 18,
+  },
+  sensorHint: {
+    fontSize: 12,
+    marginBottom: 12,
+    lineHeight: 16,
+  },
+  sensorRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 16,
+  },
+  sensorField: {
+    flex: 1,
+  },
+  sensorLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    marginBottom: 6,
+  },
+  sensorInput: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    fontSize: 14,
   },
   // Modals
   modalOverlay: {
