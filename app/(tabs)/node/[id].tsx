@@ -17,6 +17,9 @@ import {
 import fireEventsService, { FireEvent } from '../../../services/fireEventsService';
 import nodesService, { Node } from '../../../services/nodesService';
 import { useTheme } from '../../../contexts/ThemeContext';
+import { useAdmin } from '../../../contexts/AdminContext';
+import NodeToggle from '../../../components/NodeToggle';
+
 
 const light = { bg: '#FFFFFF', card: '#F3F4F6', border: '#E5E7EB', chip: '#E5E7EB', textPrimary: '#111827', textSecondary: '#6B7280' };
 const dark  = { bg: '#191919', card: '#202020', border: '#2A2A2A', chip: '#262626', textPrimary: '#E6E6E5', textSecondary: '#9B9A97' };
@@ -76,6 +79,7 @@ const formatEventTime = (timestamp: string, includeDate: boolean = false) => {
 
 export default function NodeDetailScreen() {
   const { isDark } = useTheme();
+  const { isAdmin } = useAdmin();
   const c = isDark ? dark : light;
   const { id } = useLocalSearchParams<{ id: string }>();
   const nodeNumber = parseInt(id || '1');
@@ -315,6 +319,7 @@ export default function NodeDetailScreen() {
       >
         {/* Latest Status */}
         <View style={[styles.section, { paddingHorizontal: hPad }]}>
+          {isAdmin && <NodeToggle nodeId={nodeNumber} />}
           <Text style={[styles.sectionTitle, { fontSize: sectionFont, color: c.textPrimary }]}>Latest Status</Text>
 
           {latestEvent ? (
