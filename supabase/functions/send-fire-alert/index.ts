@@ -7,7 +7,9 @@ interface FireEvent {
   id: string;
   risk: string;
   event_timestamp: string;
+  notified: boolean;
   nodes: {
+    location_name: string;
     latitude: number;
     longitude: number;
   };
@@ -46,7 +48,7 @@ serve(async (req) => {
     // Fetch the fire event details with nodes location data
     const { data: fireEvent, error: eventError } = await supabase
       .from("fire_events")
-      .select("id, risk, event_timestamp, nodes(latitude, longitude)")
+      .select("id, risk, event_timestamp, notified, nodes(location_name, latitude, longitude)")
       .eq("id", event_id)
       .single();
 
@@ -55,6 +57,15 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ error: "Fire event not found" }),
         { status: 404, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    // Prevent duplicate notifications if this event was already processed
+    if (fireEvent.notified) {
+      console.log("Event already notified, skipping:", event_id);
+      return new Response(
+        JSON.stringify({ message: "Already notified", event_id }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
       );
     }
 
@@ -80,15 +91,16 @@ serve(async (req) => {
     }
 
     // Prepare push notification messages
-    const { latitude, longitude } = fireEvent.nodes;
+    const { location_name, latitude, longitude } = fireEvent.nodes;
     const messages = tokens.map((token: PushToken) => ({
       to: token.expo_push_token,
       sound: "default",
       title: `🔥 ${fireEvent.risk} Fire Risk Alert`,
-      body: `Fire detected at ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`,
+      body: `Fire detected at ${location_name}. Tap to view risk details.`,
       data: {
         event_id: fireEvent.id,
         risk: fireEvent.risk,
+        location_name,
         latitude,
         longitude,
         event_timestamp: fireEvent.event_timestamp,
