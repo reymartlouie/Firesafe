@@ -90,9 +90,13 @@ export default function SignUpScreen() {
 
       await authService.signup(username, contactNumber, password);
 
-      const expoPushToken = await pushNotificationService.registerForPushNotifications();
-      if (expoPushToken) {
-        await pushNotificationService.savePushToken(expoPushToken);
+      try {
+        const expoPushToken = await pushNotificationService.registerForPushNotifications();
+        if (expoPushToken) {
+          await pushNotificationService.savePushToken(expoPushToken);
+        }
+      } catch (pushError: any) {
+        console.warn('Push token registration failed (non-critical):', pushError?.message || pushError);
       }
 
       setModalMessage('Account successfully registered!');

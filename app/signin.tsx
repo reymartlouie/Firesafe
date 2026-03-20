@@ -79,8 +79,7 @@ export default function SignInScreen() {
           await pushNotificationService.savePushToken(expoPushToken);
         }
       } catch (pushError: any) {
-        showModal('Push Token Error', pushError?.message || 'Failed to register push notifications');
-        return;
+        console.warn('Push token registration failed (non-critical):', pushError?.message || pushError);
       }
 
       showModal('Success', `Welcome back, ${username}!`);
