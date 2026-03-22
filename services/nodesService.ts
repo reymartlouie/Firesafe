@@ -21,14 +21,14 @@ export interface UpdateNodeLocationParams {
   description?: string;
 }
 
-export interface SimulatedFireEventParams {
-  node_number: number;
-  risk: 'HIGH' | 'CRITICAL';
-  temperature?: number;
-  humidity?: number;
-  smoke_gas?: number;
-  description?: string;
-}
+// export interface SimulatedFireEventParams {
+//   node_number: number;
+//   risk: 'HIGH' | 'CRITICAL';
+//   temperature?: number;
+//   humidity?: number;
+//   smoke_gas?: number;
+//   description?: string;
+// }
 
 export interface FireEvent {
   id: number;
@@ -118,27 +118,27 @@ class NodeManagementService {
     }
   }
 
-  async insertSimulatedFireEvent(params: SimulatedFireEventParams): Promise<FireEvent | null> {
-    try {
-      const superAdminStatus = await this.isSuperAdmin();
-      if (!superAdminStatus) {
-        throw new Error('Only the super admin can insert simulated fire events');
-      }
-      const { data, error } = await supabase.rpc('insert_simulated_fire_event', {
-        p_node_number: params.node_number,
-        p_risk: params.risk,
-        p_temperature: params.temperature || null,
-        p_humidity: params.humidity || null,
-        p_smoke_gas: params.smoke_gas || null,
-        p_description: params.description || null,
-      });
-      if (error) throw error;
-      return data && data.length > 0 ? data[0] : null;
-    } catch (error: any) {
-      console.error('Error inserting simulated fire event:', error);
-      throw new Error(error.message || 'Failed to insert simulated fire event');
-    }
-  }
+  // async insertSimulatedFireEvent(params: SimulatedFireEventParams): Promise<FireEvent | null> {
+  //   try {
+  //     const superAdminStatus = await this.isSuperAdmin();
+  //     if (!superAdminStatus) {
+  //       throw new Error('Only the super admin can insert simulated fire events');
+  //     }
+  //     const { data, error } = await supabase.rpc('insert_simulated_fire_event', {
+  //       p_node_number: params.node_number,
+  //       p_risk: params.risk,
+  //       p_temperature: params.temperature || null,
+  //       p_humidity: params.humidity || null,
+  //       p_smoke_gas: params.smoke_gas || null,
+  //       p_description: params.description || null,
+  //     });
+  //     if (error) throw error;
+  //     return data && data.length > 0 ? data[0] : null;
+  //   } catch (error: any) {
+  //     console.error('Error inserting simulated fire event:', error);
+  //     throw new Error(error.message || 'Failed to insert simulated fire event');
+  //   }
+  // }
 
   async updateNode(
     nodeNumber: number,

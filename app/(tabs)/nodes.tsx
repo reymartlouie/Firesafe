@@ -15,7 +15,7 @@ import {
 import CustomModalAlert from '../CustomModalAlert';
 import { useAdmin } from '../../contexts/AdminContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import nodeManagementService, { Node, SimulatedFireEventParams } from '../../services/nodesService';
+import nodeManagementService, { Node/*, SimulatedFireEventParams*/ } from '../../services/nodesService';
 
 const light = { bg: '#FFFFFF', card: '#F3F4F6', border: '#E5E7EB', chip: '#E5E7EB', textPrimary: '#111827', textSecondary: '#6B7280', simulatorToggleBg: '#FFF7ED', simulatorToggleBorder: '#FDBA74', simulatorControlsBg: '#F9FAFB', nodeSelectorBg: '#FFFFFF', nodeSelectorActiveBg: '#FFF7ED' };
 const dark  = { bg: '#191919', card: '#202020', border: '#2A2A2A', chip: '#262626', textPrimary: '#E6E6E5', textSecondary: '#9B9A97', simulatorToggleBg: '#2A1A0A', simulatorToggleBorder: '#92400E', simulatorControlsBg: '#202020', nodeSelectorBg: '#2A2A2A', nodeSelectorActiveBg: '#3D1F0A' };
@@ -29,7 +29,7 @@ export default function NodesScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  // const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   // Edit modal state
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -57,13 +57,13 @@ export default function NodesScreen() {
   const [alertTitle, setAlertTitle] = useState('');
   const [alertMessage, setAlertMessage] = useState('');
 
-  // Simulator state
-  const [showSimulator, setShowSimulator] = useState(false);
-  const [selectedNode, setSelectedNode] = useState<number>(1);
-  const [simulatorLoading, setSimulatorLoading] = useState(false);
-  const [simTemperature, setSimTemperature] = useState('');
-  const [simHumidity, setSimHumidity] = useState('');
-  const [simSmokeGas, setSimSmokeGas] = useState('');
+  // // Simulator state
+  // const [showSimulator, setShowSimulator] = useState(false);
+  // const [selectedNode, setSelectedNode] = useState<number>(1);
+  // const [simulatorLoading, setSimulatorLoading] = useState(false);
+  // const [simTemperature, setSimTemperature] = useState('');
+  // const [simHumidity, setSimHumidity] = useState('');
+  // const [simSmokeGas, setSimSmokeGas] = useState('');
 
   const fetchNodes = useCallback(async () => {
     try {
@@ -81,7 +81,7 @@ export default function NodesScreen() {
 
   useEffect(() => {
     fetchNodes();
-    nodeManagementService.isSuperAdmin().then(setIsSuperAdmin).catch(() => {});
+    // nodeManagementService.isSuperAdmin().then(setIsSuperAdmin).catch(() => {});
 
     const unsubscribe = nodeManagementService.subscribeToNodes(() => {
       fetchNodes();
@@ -212,36 +212,36 @@ export default function NodesScreen() {
     }
   };
 
-  const handleCreateFireEvent = async (riskLevel: 'HIGH' | 'CRITICAL') => {
-    setSimulatorLoading(true);
-    try {
-      const temp = simTemperature.trim() ? parseFloat(simTemperature) : undefined;
-      const hum = simHumidity.trim() ? parseFloat(simHumidity) : undefined;
-      const smoke = simSmokeGas.trim() ? parseFloat(simSmokeGas) : undefined;
+  // const handleCreateFireEvent = async (riskLevel: 'HIGH' | 'CRITICAL') => {
+  //   setSimulatorLoading(true);
+  //   try {
+  //     const temp = simTemperature.trim() ? parseFloat(simTemperature) : undefined;
+  //     const hum = simHumidity.trim() ? parseFloat(simHumidity) : undefined;
+  //     const smoke = simSmokeGas.trim() ? parseFloat(simSmokeGas) : undefined;
 
-      if ((simTemperature.trim() && isNaN(temp!)) ||
-          (simHumidity.trim() && isNaN(hum!)) ||
-          (simSmokeGas.trim() && isNaN(smoke!))) {
-        showAlert('Invalid Input', 'Sensor values must be valid numbers.');
-        return;
-      }
+  //     if ((simTemperature.trim() && isNaN(temp!)) ||
+  //         (simHumidity.trim() && isNaN(hum!)) ||
+  //         (simSmokeGas.trim() && isNaN(smoke!))) {
+  //       showAlert('Invalid Input', 'Sensor values must be valid numbers.');
+  //       return;
+  //     }
 
-      const params: SimulatedFireEventParams = {
-        node_number: selectedNode,
-        risk: riskLevel,
-        temperature: temp,
-        humidity: hum,
-        smoke_gas: smoke,
-      };
-      await nodeManagementService.insertSimulatedFireEvent(params);
-      showAlert('Fire Event Created', `${riskLevel} event created for Node ${selectedNode}!`);
-      setTimeout(() => fetchNodes(), 1000);
-    } catch (err: any) {
-      showAlert('Error', err.message || 'Failed to create fire event.');
-    } finally {
-      setSimulatorLoading(false);
-    }
-  };
+  //     const params: SimulatedFireEventParams = {
+  //       node_number: selectedNode,
+  //       risk: riskLevel,
+  //       temperature: temp,
+  //       humidity: hum,
+  //       smoke_gas: smoke,
+  //     };
+  //     await nodeManagementService.insertSimulatedFireEvent(params);
+  //     showAlert('Fire Event Created', `${riskLevel} event created for Node ${selectedNode}!`);
+  //     setTimeout(() => fetchNodes(), 1000);
+  //   } catch (err: any) {
+  //     showAlert('Error', err.message || 'Failed to create fire event.');
+  //   } finally {
+  //     setSimulatorLoading(false);
+  //   }
+  // };
 
   return (
     <View style={[styles.container, { backgroundColor: c.bg }]}>
@@ -357,7 +357,7 @@ export default function NodesScreen() {
         )}
 
         {/* Fire Event Simulator - super admin only */}
-        {isSuperAdmin && !loading && !error && (
+        {/* {isSuperAdmin && !loading && !error && (
           <View style={styles.simulatorSection}>
             <TouchableOpacity
               style={[styles.simulatorToggle, { backgroundColor: c.simulatorToggleBg, borderColor: c.simulatorToggleBorder }]}
@@ -489,7 +489,7 @@ export default function NodesScreen() {
               </View>
             )}
           </View>
-        )}
+        )} */}
       </ScrollView>
 
       {/* Edit Node Modal */}
